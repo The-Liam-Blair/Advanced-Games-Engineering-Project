@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.AI;
 using UnityEngine.UIElements;
 
 
@@ -84,14 +85,17 @@ public class GoalCreation : MonoBehaviour, IGoap
 	}
 
 	public bool moveAgent(GoapAction nextAction) {
-		// move towards the NextAction's target
-		float step = moveSpeed * Time.deltaTime;
-		gameObject.transform.position = Vector3.MoveTowards(gameObject.transform.position, nextAction.target.transform.position, step);
-		
-		if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 1 ) {
+        // move towards the NextAction's target
+        //float step = moveSpeed * Time.deltaTime;
+        //gameObject.transform.position = Vector3.MoveTowards(gameObject.transform.position, nextAction.target.transform.position, step);
+
+        gameObject.GetComponent<NavMeshAgent>().destination = nextAction.target.transform.position;
+
+        if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 1 ) {
 			// we are at the target location, we are done
 			nextAction.setInRange(true);
-			return true;
+            gameObject.GetComponent<NavMeshAgent>().ResetPath();
+            return true;
 		} else
 			return false;
 	}
