@@ -13,40 +13,22 @@ using UnityEngine.UIElements;
  */
 public class GoalCreation : MonoBehaviour, IGoap
 {
-	public float moveSpeed = 5;
-
-
-	void Start ()
-	{
-        
-    }
-
-
-	void Update ()
-	{
-
-	}
-
-	/**
+    /**
 	 * Key-Value data that will feed the GOAP actions and system while planning.
 	 */
 	public HashSet<KeyValuePair<string,object>> getWorldState () {
 		HashSet<KeyValuePair<string,object>> worldData = new HashSet<KeyValuePair<string,object>> ();
-        worldData.Add(new KeyValuePair<string, object>("touchingCube", false));
-
-        /*
-		worldData.Add(new KeyValuePair<string, object>("hasOre", (backpack.numOre > 0) ));
-		worldData.Add(new KeyValuePair<string, object>("hasLogs", (backpack.numLogs > 0) ));
-		worldData.Add(new KeyValuePair<string, object>("hasFirewood", (backpack.numFirewood > 0) ));
-		worldData.Add(new KeyValuePair<string, object>("hasTool", (backpack.tool != null) ));
-        */
+        
+        // worldData.Add(new KeyValuePair<string, object>("precondition", dynamic boolean check for precondition status) ));
+        
+        worldData.Add(new KeyValuePair<string, object>("touchingPlayer", false));
 
         return worldData;
 	}
 
     /**
-	 * Our only goal will ever be to make tools.
-	 * The ForgeTooldAction will be able to fulfill this goal.
+     * Generate goals
+     * Will later be expanded to have goal insistence values so multiple goals can exist.
 	 */
     public HashSet<KeyValuePair<string, object>> createGoalState()
     {
@@ -56,7 +38,10 @@ public class GoalCreation : MonoBehaviour, IGoap
         return goal;
     }
 
-
+	/**
+	 * Not sure why the framework defined this empty, but keeping it regardless.
+	 * Will likely need to be properly implemented later as many plans (Chasing player, etc) will inevitably fail multiple times.
+	 */
     public void planFailed (HashSet<KeyValuePair<string, object>> failedGoal)
 	{
 		// Not handling this here since we are making sure our goals will always succeed.
@@ -64,18 +49,27 @@ public class GoalCreation : MonoBehaviour, IGoap
 		// the same goal again, or else it will just fail.
 	}
 
+	/**
+	 * Debugger plan assembled confirmation message.
+	 */
 	public void planFound (HashSet<KeyValuePair<string, object>> goal, Queue<GoapAction> actions)
 	{
 		// Yay we found a plan for our goal
 		Debug.Log ("<color=green>Plan found</color> "+GoapAgent.prettyPrint(actions));
 	}
-
+    
+	/**
+	 * Debugger action completed confirmation message.
+	 */
 	public void actionsFinished ()
 	{
 		// Everything is done, we completed our actions for this gool. Hooray!
 		Debug.Log ("<color=blue>Actions completed</color>");
 	}
-
+    
+	/**
+	 * Debugger plan cancelled confirmation message
+	 */
 	public void planAborted (GoapAction aborter)
 	{
 		// An action bailed out of the plan. State has been reset to plan again.
@@ -84,7 +78,11 @@ public class GoalCreation : MonoBehaviour, IGoap
 		Debug.Log ("<color=red>Plan Aborted</color> "+GoapAgent.prettyPrint(aborter));
 	}
 
-	public bool moveAgent(GoapAction nextAction) {
+    /**
+     * Instructs the enemy agent to move (Currently to the action objective). Modified to call the nav mesh component for proper path finding.
+     * For predictive pathfinding: Either modify this to be able to access region confidence values, or modify actions to access region confidence values.
+     */
+    public bool moveAgent(GoapAction nextAction) {
         // move towards the NextAction's target
         //float step = moveSpeed * Time.deltaTime;
         //gameObject.transform.position = Vector3.MoveTowards(gameObject.transform.position, nextAction.target.transform.position, step);

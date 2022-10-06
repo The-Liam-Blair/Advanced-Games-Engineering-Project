@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using UnityEngine.AI;
 
 
 public sealed class GoapAgent : MonoBehaviour {
@@ -31,7 +32,9 @@ public sealed class GoapAgent : MonoBehaviour {
 		createPerformActionState ();
 		stateMachine.pushState (idleState);
 		loadActions ();
-	}
+
+        GetComponent<NavMeshAgent>().speed = 8f;
+    }
 	
 
 	void Update () {

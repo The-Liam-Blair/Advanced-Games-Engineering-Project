@@ -3,42 +3,50 @@ using System;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
+
 public class TouchCube : GoapAction
 {
+    // Action-specific global variables needed for proper action execution.
     private bool movedThere;
     private GameObject targetCube;
 
+    // Init preconditions and effects.
     public TouchCube()
     {
-        addPrecondition("touchingCube", false);
+        addPrecondition("touchingPlayer", false);
         addEffect("pog", true);
     }
 
 
+    // Reset global variables.
     public override void reset()
     {
         movedThere = false;
         targetCube = null;
     }
 
+    // Check if the action has been completed.
     public override bool isDone()
     {
         return movedThere;
     }
 
+    // Determines if the action can be performed now from being in the correct location.
     public override bool requiresInRange()
     {
-        return true; // yes we need to be near a supply pile so we can drop off the ore
+        return true;
     }
 
+    // Checks if the action can be run
     public override bool checkProceduralPrecondition(GameObject agent)
     {
         // find the nearest supply pile that has spare ore
-        target = GameObject.Find("Cube");
+        target = GameObject.Find("Player");
 
         return true;
     }
 
+    // Implementation of the action itself, does not include movement: Only the action AFTER arriving to the correct location.
     public override bool perform(GameObject agent)
     {
         Debug.DrawLine(
