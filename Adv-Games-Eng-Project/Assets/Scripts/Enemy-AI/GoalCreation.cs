@@ -19,9 +19,9 @@ public class GoalCreation : MonoBehaviour, IGoap
 	public HashSet<KeyValuePair<string,object>> getWorldState () {
 		HashSet<KeyValuePair<string,object>> worldData = new HashSet<KeyValuePair<string,object>> ();
         
-        // worldData.Add(new KeyValuePair<string, object>("precondition", dynamic boolean check for precondition status) ));
-        
-        worldData.Add(new KeyValuePair<string, object>("touchingPlayer", false));
+        worldData.Add(new KeyValuePair<string, object>("touchingPlayer", (gameObject.transform.position - GameObject.Find("Player").transform.position).magnitude < 2f));
+        worldData.Add(new KeyValuePair<string, object>("touchingGrass", (gameObject.transform.position - GameObject.Find("Grass").transform.position).magnitude < 2f));
+
 
         return worldData;
 	}
@@ -34,7 +34,14 @@ public class GoalCreation : MonoBehaviour, IGoap
     {
         HashSet<KeyValuePair<string, object>> goal = new HashSet<KeyValuePair<string, object>>();
 
-        goal.Add(new KeyValuePair<string, object>("pog", true));
+        if (getWorldState().Contains(new KeyValuePair<string, object>("touchingPlayer", true)))
+        {
+            goal.Add(new KeyValuePair<string, object>("touchingGrass", true));
+        }
+        else
+        {
+            goal.Add(new KeyValuePair<string, object>("touchingPlayer", true));
+        }
         return goal;
     }
 
@@ -89,10 +96,10 @@ public class GoalCreation : MonoBehaviour, IGoap
 
         gameObject.GetComponent<NavMeshAgent>().destination = nextAction.target.transform.position;
 
-        if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 1 ) {
+        if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 2f ) {
 			// we are at the target location, we are done
 			nextAction.setInRange(true);
-            gameObject.GetComponent<NavMeshAgent>().ResetPath();
+            nextAction.gameObject.GetComponent<NavMeshAgent>().ResetPath();
             return true;
 		} else
 			return false;

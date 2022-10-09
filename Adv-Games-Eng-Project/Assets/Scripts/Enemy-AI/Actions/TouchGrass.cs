@@ -4,17 +4,17 @@ using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
 
-public class TouchCube : GoapAction
+public class TouchGrass : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
     private bool movedThere;
 
     // Init preconditions and effects.
-    public TouchCube()
+    public TouchGrass()
     {
-        addPrecondition("touchingPlayer", false);
-        addEffect("touchingPlayer", true);
-        addEffect("touchingGrass", false);
+        addPrecondition("touchingGrass", false);
+        addEffect("touchingGrass", true);
+        addEffect("touchingPlayer", false);
     }
 
 
@@ -42,7 +42,8 @@ public class TouchCube : GoapAction
     public override bool checkProceduralPrecondition(GameObject agent)
     {
         // Right now player position is always known, will be updated later to be predicted.
-        target = GameObject.Find("Player");
+        target = GameObject.Find("Grass");
+        Debug.Log(target.name);
 
         // Get cost from time to target (distance / speed) Speed is constant so acceleration isn't calculated.
         // Since path to target isn't created yet, one must be sampled (but not exactly instantiated) to test for distance.
@@ -77,10 +78,10 @@ public class TouchCube : GoapAction
     {
         for (int i = 0; i < 10000; i++)
         {
-
-            Debug.DrawLine(
+            
+        Debug.DrawLine(
                 agent.transform.position,
-                agent.transform.position + new Vector3(Random.Range(-3, 3), Random.Range(5, 10), Random.Range(-3, 3)),
+                agent.transform.position + new Vector3(Random.Range(-3,3), Random.Range(5,10), Random.Range(-3, 3)),
                 (Color)new Vector4(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f), 1),
                 5);
         }

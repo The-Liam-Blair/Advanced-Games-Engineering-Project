@@ -1,6 +1,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.AI;
 
 public abstract class GoapAction : MonoBehaviour {
 
@@ -13,7 +14,7 @@ public abstract class GoapAction : MonoBehaviour {
 	/* The cost of performing the action. 
 	 * Figure out a weight that suits the action. 
 	 * Changing it will affect what actions are chosen during planning.*/
-    public float cost = 1f;
+    public float cost;
 
     /**
 	 * An action often has to perform on an object. This is that object. Can be null. */
@@ -28,7 +29,7 @@ public abstract class GoapAction : MonoBehaviour {
 		inRange = false;
 		target = null;
 		reset ();
-	}
+    }
 
 	/**
 	 * Reset any variables that need to be reset before planning happens again.
@@ -117,4 +118,18 @@ public abstract class GoapAction : MonoBehaviour {
 			return effects;
 		}
 	}
+
+    // Credit to 'mcapousek' for the path length calculation:
+    // https://forum.unity.com/threads/getting-the-distance-in-nav-mesh.315846/
+    public float GetPathLength(NavMeshPath path)
+    {
+		float pathLength = 0f;
+
+        for (int i = 0; i < path.corners.Length - 1; i++)
+        {
+            pathLength += Vector3.Distance(path.corners[i], path.corners[i + 1]);
+        }
+
+        return pathLength;
+    }
 }

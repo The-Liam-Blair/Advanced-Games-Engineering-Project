@@ -188,8 +188,7 @@ public class GoapPlanner
 		public float runningCost;
 		public HashSet<KeyValuePair<string,object>> state;
 		public GoapAction action;
-
-		public Node(Node parent, float runningCost, HashSet<KeyValuePair<string,object>> state, GoapAction action) {
+        public Node(Node parent, float runningCost, HashSet<KeyValuePair<string,object>> state, GoapAction action) {
 			this.parent = parent;
 			this.runningCost = runningCost;
 			this.state = state;
