@@ -9,15 +9,13 @@ using UnityEngine.UIElements;
 
 
 /**
- * A general labourer class.
- * You should subclass this for specific Labourer classes and implement
- * the createGoalState() method that will populate the goal for the GOAP
- * planner.
+ * Handles the creation and selection of goals before planning. Also handles agent movement.
  */
 public class GoalCreation : MonoBehaviour, IGoap
 {
     /**
-	 * Key-Value data that will feed the GOAP actions and system while planning.
+	 * Returns all the (known) world state that the enemy has perceived.
+     * World state in this instance is boolean values that represent different attributes of the world and their state.
 	 */
 	public HashSet<KeyValuePair<string,object>> getWorldState () {
 		HashSet<KeyValuePair<string,object>> worldData = new HashSet<KeyValuePair<string,object>> ();
@@ -32,8 +30,9 @@ public class GoalCreation : MonoBehaviour, IGoap
 	}
 
     /**
-     * Generate goals
-     * Will later be expanded to have goal insistence values so multiple goals can exist.
+     * Called before planning to decide what goal (end effect of an action) the agent should pursue.
+     * Firstly acquires the current world state and list of all selectable goals and decides the goal to pursue using their insistence values.
+     * Returns the goal with the highest insistence (priority) value.
 	 */
     public HashSet<KeyValuePair<string, object>> createGoalState()
     {
@@ -53,27 +52,26 @@ public class GoalCreation : MonoBehaviour, IGoap
     }
 
 	/**
-	 * Not sure why the framework defined this empty, but keeping it regardless.
-	 * Will likely need to be properly implemented later as many plans (Chasing player, etc) will inevitably fail multiple times.
+	 *  Plan creation process failed. Only really called during plan creation process, not during the execution of a plan.
+	 * Essentially, this should not be called ever, as if the game enters a state that results in a failed plan, the planner will
+	 * infinitely create failed plans. Avoid creating any failed plans at all to prevent this!
+	 *
+	 * Alternatively, world state can be updated in this function to (potentially) cancel out a failed plan feedback loop. Not necessary however so left out
+	 * for now.
 	 */
     public void planFailed (HashSet<KeyValuePair<string, object>> failedGoal)
-	{
-		// Not handling this here since we are making sure our goals will always succeed.
-		// But normally you want to make sure the world state has changed before running
-		// the same goal again, or else it will just fail.
-	}
+	{}
 
 	/**
-	 * Debugger plan assembled confirmation message.
+	 * Called every time a plan has been completed fully, including a relevant action set generated that results in the completion of a goal.
 	 */
 	public void planFound (HashSet<KeyValuePair<string, object>> goal, Queue<GoapAction> actions)
 	{
-		// Yay we found a plan for our goal
 		Debug.Log ("<color=green>Plan found</color> "+GoapAgent.prettyPrint(actions));
 	}
     
 	/**
-	 * Debugger action completed confirmation message.
+	 * Debugger message that is called every time the enemy agent completes an action from it's planned action set.
 	 */
 	public void actionsFinished ()
 	{
@@ -82,7 +80,10 @@ public class GoalCreation : MonoBehaviour, IGoap
 	}
     
 	/**
-	 * Debugger plan cancelled confirmation message
+	 * Called when the agent decides to cancel a plan. Currently unimplemented, but would likely destroy the current plan, update world state and
+	 * go through the planning process again.
+	 *
+	 * Likely will be called when an action seems to be unachievable within a reasonable time-frame, such as chasing a player.
 	 */
 	public void planAborted (GoapAction aborter)
 	{
@@ -93,31 +94,34 @@ public class GoalCreation : MonoBehaviour, IGoap
 	}
 
     /**
-     * Instructs the enemy agent to move (Currently to the action objective). Modified to call the nav mesh component for proper path finding.
-     * For predictive pathfinding: Either modify this to be able to access region confidence values, or modify actions to access region confidence values.
+     * Instructs the enemy agent to move to a specific location, currently only the action's associated location (if it exists). Modified to
+     * call the nav mesh component for proper path finding. If an action does not have an associated location, this function is not called.
+     * For predictive pathfinding: Modify this to be able to access region confidence values.
+     *
+     * Called once per frame while the enemy agent is in the 'MoveTo' state.
      */
     public bool moveAgent(GoapAction nextAction) {
-        // move towards the NextAction's target
-        //float step = moveSpeed * Time.deltaTime;
-        //gameObject.transform.position = Vector3.MoveTowards(gameObject.transform.position, nextAction.target.transform.position, step);
-
+        
+        // Update + set enemy agent's nav mesh destination. to be the action's associated location.
         gameObject.GetComponent<NavMeshAgent>().destination = nextAction.target.transform.position;
 
-        if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 2f ) {
-			// we are at the target location, we are done
+        // Perform a distance check between enemy agent and action's associated location. If this evaluates to true, destroy the nav mesh path
+        // and return true (agent is at action location). Otherwise, return false (agent needs to keep moving).
+        if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 2f ) 
+        {
 			nextAction.setInRange(true);
             nextAction.gameObject.GetComponent<NavMeshAgent>().ResetPath();
             return true;
-		} else
-			return false;
+		}
+        return false;
 	}
 
 	// Black magic double return values!
 	// Determines what goal to choose. Currently very inefficient, kept however for readability and will be properly updated later on.
-	// todo: do some fancy actual calculataions (lookup utility ai) to properly determine goal insistence values.
+	// todo: do some fancy actual calculations (lookup utility ai) to properly determine goal insistence values.
     public (string, object) DetermineGoal(HashSet<KeyValuePair<string, object>> worldState, HashSet<KeyValuePair<string, object>> goalList)
     {
-		// return values init so the compiler doesn't go mental.
+		// return values declared so the compiler doesn't go mental.
         string goal = "";
         bool goalFlag = false;
 
@@ -144,34 +148,34 @@ public class GoalCreation : MonoBehaviour, IGoap
             switch (currentGoal)
             {
                 case "touchingPlayer":
-                    if (touchingGrass) { Insistence -= 1; }
-                    if (isRed) { Insistence -= 1; }
+                    if (touchingGrass) { Insistence += 1; }
+                    if (isRed) { Insistence += 1; }
                     goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
                     break;
 
                 case "touchingGrass":
-                    if (touchingPlayer) { Insistence -= 1; }
-                    if (isBlue) { Insistence -= 1; }
+                    if (touchingPlayer) { Insistence += 1; }
+                    if (isBlue) { Insistence += 1; }
                     goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
                     break;
             }
         }
 
-        // Find goal with least insistence value, using the previously-populated goalIValues list.
-        int min = Int16.MaxValue;
+        // Find goal with the highest insistence value, using the previously-populated goalIValues list.
+        int max = -Int16.MaxValue;
         for (int i = 0; i < goalIValues.Count; i++)
         {
-            // If new min is found, set output values to the related goal and the goal condition.
-            if (goalIValues.ElementAt(i).Value < min)
+            // If new max is found, set output values to the related goal and the goal condition.
+            if (goalIValues.ElementAt(i).Value > max)
             {
-                min = goalIValues.ElementAt(i).Value;
+                max = goalIValues.ElementAt(i).Value;
                 
                 goal = goalIValues.ElementAt(i).Key;
                 goalFlag = goalList.Contains(new KeyValuePair<string, object>(goal, true));
             }
         }
         
-        // Always returns lowest insistence goal.
+        // Always returns highest insistence goal and the desired goal state.
         return (goal, goalFlag);
     }
 }

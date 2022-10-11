@@ -206,8 +206,9 @@ GameObject:
   - component: {fileID: 79133743}
   - component: {fileID: 79133747}
   - component: {fileID: 79133742}
+  - component: {fileID: 79133749}
+  - component: {fileID: 79133748}
   - component: {fileID: 79133745}
-  - component: {fileID: 79133746}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -285,7 +286,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 79133737}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 33.35, y: 0.5, z: 0}
+  m_LocalPosition: {x: 24.74, y: 0.5, z: -20.98}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -351,22 +352,6 @@ NavMeshAgent:
   m_BaseOffset: 0.5
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 0
---- !u!54 &79133746
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 79133737}
-  serializedVersion: 2
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 116
-  m_CollisionDetection: 1
 --- !u!114 &79133747
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -377,6 +362,34 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6f25e69e0fef574ca087651abc4a66f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cost: 0
+  target: {fileID: 0}
+--- !u!114 &79133748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 79133737}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e3f27c65942df44f8b1c6ab8e2bc84f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cost: 0
+  target: {fileID: 0}
+--- !u!114 &79133749
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 79133737}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4caa49ced3271514b9693095ae7d5c1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   cost: 0
