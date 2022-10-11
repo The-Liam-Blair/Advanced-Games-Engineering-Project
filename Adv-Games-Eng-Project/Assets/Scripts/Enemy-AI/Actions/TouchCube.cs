@@ -13,6 +13,7 @@ public class TouchCube : GoapAction
     public TouchCube()
     {
         addPrecondition("touchingPlayer", false);
+        addPrecondition("isRed", true);
         addEffect("touchingPlayer", true);
         addEffect("touchingGrass", false);
     }
@@ -61,9 +62,6 @@ public class TouchCube : GoapAction
             // Calculate movement cost from distance / speed.
             cost = pathDist / nmAgent.speed;
 
-            Debug.Log("DIST:" + pathDist + "units \n SPEED:" + nmAgent.speed + "units/s");
-            Debug.Log("COST:" + cost);
-
             // Path found, so this action is valid for the plan in it's current stage.
             return true;
         }
@@ -75,16 +73,6 @@ public class TouchCube : GoapAction
     // Implementation of the action itself, does not include movement: Only the action AFTER arriving to the correct location.
     public override bool perform(GameObject agent)
     {
-        for (int i = 0; i < 10000; i++)
-        {
-
-            Debug.DrawLine(
-                agent.transform.position,
-                agent.transform.position + new Vector3(Random.Range(-3, 3), Random.Range(5, 10), Random.Range(-3, 3)),
-                (Color)new Vector4(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f), 1),
-                5);
-        }
-
         movedThere = true;
         return true;
     }

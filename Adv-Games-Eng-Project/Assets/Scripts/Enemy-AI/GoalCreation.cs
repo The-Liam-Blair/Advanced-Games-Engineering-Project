@@ -1,6 +1,9 @@
+using System;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 using UnityEngine.AI;
 using UnityEngine.UIElements;
 
@@ -22,6 +25,8 @@ public class GoalCreation : MonoBehaviour, IGoap
         worldData.Add(new KeyValuePair<string, object>("touchingPlayer", (gameObject.transform.position - GameObject.Find("Player").transform.position).magnitude < 2f));
         worldData.Add(new KeyValuePair<string, object>("touchingGrass", (gameObject.transform.position - GameObject.Find("Grass").transform.position).magnitude < 2f));
 
+        worldData.Add(new KeyValuePair<string, object>("isBlue", gameObject.GetComponent<Renderer>().material.color == Color.blue));
+        worldData.Add(new KeyValuePair<string, object>("isRed", gameObject.GetComponent<Renderer>().material.color == Color.red));
 
         return worldData;
 	}
@@ -32,16 +37,18 @@ public class GoalCreation : MonoBehaviour, IGoap
 	 */
     public HashSet<KeyValuePair<string, object>> createGoalState()
     {
+        // Holds a singular goal (Can hold multiple but node expansion will try to satisfy every goal condition at once, cannot natively handle multiple goals).
         HashSet<KeyValuePair<string, object>> goal = new HashSet<KeyValuePair<string, object>>();
+        
+        // Pre-define every goal the enemy may select from, populate into list.
+        HashSet<KeyValuePair<string, object>> goalList = new HashSet<KeyValuePair<string, object>>();
+        goalList.Add(new KeyValuePair<string, object>("touchingPlayer", true));
+        goalList.Add(new KeyValuePair<string, object>("touchingGrass", true));
 
-        if (getWorldState().Contains(new KeyValuePair<string, object>("touchingPlayer", true)))
-        {
-            goal.Add(new KeyValuePair<string, object>("touchingGrass", true));
-        }
-        else
-        {
-            goal.Add(new KeyValuePair<string, object>("touchingPlayer", true));
-        }
+        // Do some maf to calculate which goal should be chosen at this current moment.
+        (string, object) cheapestGoalData = DetermineGoal(getWorldState(), goalList);
+        
+        goal.Add(new KeyValuePair<string, object>(cheapestGoalData.Item1, cheapestGoalData.Item2));
         return goal;
     }
 
@@ -104,5 +111,68 @@ public class GoalCreation : MonoBehaviour, IGoap
 		} else
 			return false;
 	}
+
+	// Black magic double return values!
+	// Determines what goal to choose. Currently very inefficient, kept however for readability and will be properly updated later on.
+	// todo: do some fancy actual calculataions (lookup utility ai) to properly determine goal insistence values.
+    public (string, object) DetermineGoal(HashSet<KeyValuePair<string, object>> worldState, HashSet<KeyValuePair<string, object>> goalList)
+    {
+		// return values init so the compiler doesn't go mental.
+        string goal = "";
+        bool goalFlag = false;
+
+        // Init some world data for use later. Wasteful but kept for readability currently.
+        bool touchingPlayer = worldState.Contains(new KeyValuePair<string, object>("touchingPlayer", true));
+        bool touchingGrass = worldState.Contains(new KeyValuePair<string, object>("touchingGrass", true));
+
+        bool isRed = worldState.Contains(new KeyValuePair<string, object>("isRed", true));
+        bool isBlue = worldState.Contains(new KeyValuePair<string, object>("isBlue", true));
+
+        // List of goals and their associated insistence values.
+        HashSet<KeyValuePair<string, int>> goalIValues = new HashSet<KeyValuePair<string, int>>();
+
+        // For each goal...
+        for (int i = 0; i < goalList.Count; i++)
+        {
+
+            // Find goal by it's name.
+            string currentGoal = goalList.ElementAt(i).Key;
+            // Init current goal's insistence value.
+            int Insistence = 0;
+
+            // For each specific goal, determine insistence value based on world state, then add results to the goalIValues list.
+            switch (currentGoal)
+            {
+                case "touchingPlayer":
+                    if (touchingGrass) { Insistence -= 1; }
+                    if (isRed) { Insistence -= 1; }
+                    goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
+                    break;
+
+                case "touchingGrass":
+                    if (touchingPlayer) { Insistence -= 1; }
+                    if (isBlue) { Insistence -= 1; }
+                    goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
+                    break;
+            }
+        }
+
+        // Find goal with least insistence value, using the previously-populated goalIValues list.
+        int min = Int16.MaxValue;
+        for (int i = 0; i < goalIValues.Count; i++)
+        {
+            // If new min is found, set output values to the related goal and the goal condition.
+            if (goalIValues.ElementAt(i).Value < min)
+            {
+                min = goalIValues.ElementAt(i).Value;
+                
+                goal = goalIValues.ElementAt(i).Key;
+                goalFlag = goalList.Contains(new KeyValuePair<string, object>(goal, true));
+            }
+        }
+        
+        // Always returns lowest insistence goal.
+        return (goal, goalFlag);
+    }
 }
 
