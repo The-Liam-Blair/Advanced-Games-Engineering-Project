@@ -99,6 +99,15 @@ public class GoalCreation : MonoBehaviour, IGoap
      * For predictive pathfinding: Modify this to be able to access region confidence values.
      *
      * Called once per frame while the enemy agent is in the 'MoveTo' state.
+     *
+     *
+     * Minor problem with nav mesh path-finding: when the agent approaches a narrow mesh strip, it will intrinsically slow down as it thinks it's about to
+     * walk off the walkable nav mesh area. Extremely noticeable on tight walkways and sharp corners.
+     * Solution: (Derived from https://forum.unity.com/threads/obstacle-avoidance-causing-agents-to-slow-down-on-corners.1074550/):
+     *  - Set agent path obstacle quality to none (Will not look ahead for obstacles, so does not slow down in the above instances.
+     *  - However: Unable to detect dynamic obstacles (E.g., incoming player projectiles).
+     *  - But: Utilize ray-casting to detect any specific obstacles, like player projectiles. If one is detected, TEMPORARILY set the obstacle quality to high
+     *    to dodge it, then set it back to none afterwards.
      */
     public bool moveAgent(GoapAction nextAction) {
         
