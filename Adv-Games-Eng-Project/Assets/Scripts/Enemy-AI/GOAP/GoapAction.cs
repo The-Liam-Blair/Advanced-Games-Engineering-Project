@@ -19,6 +19,11 @@ public abstract class GoapAction : MonoBehaviour {
 
     // Actual cost of running this action (including moving) in real time. Used to determine if an action should be cancelled and the plan revised.
     public float currentMovementCost;
+    public bool currentCostTooHigh;
+
+    // Used exclusively when near the target to reduce the movement cost to stop the action from aborting, to record the number of times this has occurred so
+    // that this can only occur a limited amount of times to prevent an infinite loop of an action being endlessly pursued.
+    public int resetCount;
     
     // Potential target of an action. Can be null if no target is required.
 	public GameObject target;
@@ -33,6 +38,8 @@ public abstract class GoapAction : MonoBehaviour {
 		target = null;
 		reset ();
         currentMovementCost = 0f;
+        currentCostTooHigh = false;
+        resetCount = 0;
     }
     
     // Reset action after it's been used.
@@ -46,7 +53,10 @@ public abstract class GoapAction : MonoBehaviour {
 
 
     // Run the action, returns true if the action was successful.
-    public abstract bool perform(GameObject agent);
+    public virtual bool perform(GameObject agent)
+    {
+        return !currentCostTooHigh;
+    }
 
 
     // Check if the action requires the agent to be in range of the target.
@@ -128,9 +138,13 @@ public abstract class GoapAction : MonoBehaviour {
     {
 		float pathLength = 0f;
 
-        for (int i = 0; i < path.corners.Length - 1; i++)
+        // Handle cases when only one corner is recorded in the path, which does not work in the below algorithm.
+        if(path.corners.Length < 2) { return Vector3.Distance(gameObject.transform.position, path.corners[0]); }
+
+
+        for (int i = 1; i < path.corners.Length; i++)
         {
-            pathLength += Vector3.Distance(path.corners[i], path.corners[i + 1]);
+            pathLength += Vector3.Distance(path.corners[i - 1], path.corners[i]);
         }
 
         return pathLength;

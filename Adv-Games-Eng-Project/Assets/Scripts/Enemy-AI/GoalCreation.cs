@@ -7,6 +7,8 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using UnityEngine.AI;
 using UnityEngine.UIElements;
+using static UnityEngine.GraphicsBuffer;
+using Vector3 = UnityEngine.Vector3;
 
 
 public enum GOALS
@@ -130,13 +132,45 @@ public class GoalCreation : MonoBehaviour, IGoap
             return true;
 		}
 
-        nextAction.currentMovementCost += Time.deltaTime;
-
-        if (nextAction.currentMovementCost * 2 > nextAction.cost)
+        // Update current movement cost of this action. Value is halved to scale it approximately to the pre-calculated cost of the action.
+        nextAction.currentMovementCost += Time.deltaTime * 0.5f;
+        
+        // Check current movement cost to the expected action movement cost.
+        if (nextAction.currentMovementCost > nextAction.cost)
         {
+            // Movement cost is just too high, abort the plan (Force the action function to run null and return false, causing the plan to collapse and be restarted).
+            if (nextAction.currentMovementCost > nextAction.cost * 2)
+            {
+                nextAction.currentCostTooHigh = true;
+                nextAction.setInRange(true);
+                return true;
+            }
 
+            // However, if movement cost is only a bit above the expected value ( 1x < m < 2x), calculate the remaining distance to travel to the target.
+            // If this distance is short, reduce the current movement cost slightly to make the enemy pursue this action for longer in the hopes that
+            // it reaches it within a still-reasonable time frame.
+
+            // Algorithm will only reduce the current action time 3 times to stop the enemy from endlessly //ursuing a target.
+            else if (nextAction.resetCount < 3)
+            {
+                // todo: fix pathfind distance algorithm, isnae working (For this case only).
+
+                float dist = Vector3.Distance(transform.position, nextAction.target.transform.position);
+                float calcCost = dist / nextAction.currentMovementCost;
+
+                // approximately covered 2/3's or more of the distance already
+                if (calcCost < nextAction.cost / 3f)
+                {
+                    Debug.DrawLine(transform.position, nextAction.target.transform.position, Color.red, 4);
+                    Debug.Log("MAJOR POGGIN");
+                    Debug.Log("OLD TIME: " + nextAction.currentMovementCost);
+                    nextAction.resetCount++;
+                    nextAction.currentMovementCost -= calcCost;
+                    Debug.Log("NEW TIME: " + nextAction.currentMovementCost);
+
+                }
+            }
         }
-
         return false;
 	}
 
