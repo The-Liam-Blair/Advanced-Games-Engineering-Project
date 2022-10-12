@@ -16,6 +16,9 @@ public abstract class GoapAction : MonoBehaviour {
     
     // Arbitrary action cost used to denote the time cost for performing an action. Factored into planning.
     public float cost;
+
+    // Actual cost of running this action (including moving) in real time. Used to determine if an action should be cancelled and the plan revised.
+    public float currentMovementCost;
     
     // Potential target of an action. Can be null if no target is required.
 	public GameObject target;
@@ -29,6 +32,7 @@ public abstract class GoapAction : MonoBehaviour {
 		inRange = false;
 		target = null;
 		reset ();
+        currentMovementCost = 0f;
     }
     
     // Reset action after it's been used.

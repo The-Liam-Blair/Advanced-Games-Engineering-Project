@@ -4,9 +4,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using UnityEngine.AI;
 using UnityEngine.UIElements;
 
+
+public enum GOALS
+{
+    TOUCHPLAYER,
+    TOUCHGRASS
+};
 
 /**
  * Handles the creation and selection of goals before planning. Also handles agent movement.
@@ -122,15 +129,26 @@ public class GoalCreation : MonoBehaviour, IGoap
             nextAction.gameObject.GetComponent<NavMeshAgent>().ResetPath();
             return true;
 		}
+
+        nextAction.currentMovementCost += Time.deltaTime;
+
+        if (nextAction.currentMovementCost * 2 > nextAction.cost)
+        {
+
+        }
+
         return false;
 	}
 
-	// Black magic double return values!
+	// Black magic 2 returned variables!
 	// Determines what goal to choose. Currently very inefficient, kept however for readability and will be properly updated later on.
 	// todo: do some fancy actual calculations (lookup utility ai) to properly determine goal insistence values.
     public (string, object) DetermineGoal(HashSet<KeyValuePair<string, object>> worldState, HashSet<KeyValuePair<string, object>> goalList)
     {
-		// return values declared so the compiler doesn't go mental.
+
+        GOALS aGoal;
+
+        // return values declared so the compiler doesn't go mental.
         string goal = "";
         bool goalFlag = false;
 
@@ -150,19 +168,22 @@ public class GoalCreation : MonoBehaviour, IGoap
 
             // Find goal by it's name.
             string currentGoal = goalList.ElementAt(i).Key;
+
+            // Set enum value to goal.
+            aGoal = (GOALS)i;
             // Init current goal's insistence value.
             int Insistence = 0;
 
             // For each specific goal, determine insistence value based on world state, then add results to the goalIValues list.
-            switch (currentGoal)
+            switch (aGoal)
             {
-                case "touchingPlayer":
+                case GOALS.TOUCHPLAYER:
                     if (touchingGrass) { Insistence += 1; }
                     if (isRed) { Insistence += 1; }
                     goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
                     break;
 
-                case "touchingGrass":
+                case GOALS.TOUCHGRASS:
                     if (touchingPlayer) { Insistence += 1; }
                     if (isBlue) { Insistence += 1; }
                     goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
@@ -171,7 +192,7 @@ public class GoalCreation : MonoBehaviour, IGoap
         }
 
         // Find goal with the highest insistence value, using the previously-populated goalIValues list.
-        int max = -Int16.MaxValue;
+        int max = -1;
         for (int i = 0; i < goalIValues.Count; i++)
         {
             // If new max is found, set output values to the related goal and the goal condition.
