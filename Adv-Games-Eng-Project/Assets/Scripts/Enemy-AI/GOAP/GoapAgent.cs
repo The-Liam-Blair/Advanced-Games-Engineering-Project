@@ -193,8 +193,8 @@ public sealed class GoapAgent : MonoBehaviour {
 	{
 		GoapAction[] actions = gameObject.GetComponents<GoapAction>();
 		foreach (GoapAction a in actions) {
-			availableActions.Add (a);
-		}
+			if(a.isActionEnabled()) { availableActions.Add(a); }
+        }
 		Debug.Log("Found actions: "+prettyPrint(actions));
 	}
 

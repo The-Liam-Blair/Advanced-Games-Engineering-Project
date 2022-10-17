@@ -28,10 +28,22 @@ public abstract class GoapAction : MonoBehaviour {
     // Potential target of an action. Can be null if no target is required.
 	public GameObject target;
 
+    protected bool actionEnabled;
+
+    // Representation of an enemy's understanding of a given item or game mechanic.
+    // Knowledge is gained from witnessing the player use an action (Small increase), or being a victim of the item (Large increase).
+    // If knowledge >= 100 : Enemy will be able to utilise that item or game mechanic against the player.
+    // If knowledge >= 200 : Enemy additionally will try to counter player-made items or mechanics used against the enemy (Dodging, dismantling or avoiding).
+    protected int actionKnowledge;
+    protected bool canCounterAction;
+
 	public GoapAction() {
 		preconditions = new HashSet<KeyValuePair<string, object>> ();
 		effects = new HashSet<KeyValuePair<string, object>> ();
-	}
+
+        actionKnowledge = 0;
+        canCounterAction = false;
+    }
 
 	public void doReset() {
 		inRange = false;
@@ -130,23 +142,34 @@ public abstract class GoapAction : MonoBehaviour {
 		}
 	}
 
-    // Credit to 'mcapousek' for the path length calculation:
-    // https://forum.unity.com/threads/getting-the-distance-in-nav-mesh.315846/
-    //
+
+    // Action enabled getter
+    public bool isActionEnabled()
+    {
+        return actionEnabled;
+    }
+
+
     // Returns true walking distance length of a given nav mesh path.
     public float GetPathLength(NavMeshPath path)
     {
 		float pathLength = 0f;
 
-        // Handle cases when only one corner is recorded in the path, which does not work in the below algorithm.
-        if(path.corners.Length < 2) { return Vector3.Distance(gameObject.transform.position, path.corners[0]); }
-
-
         for (int i = 1; i < path.corners.Length; i++)
         {
             pathLength += Vector3.Distance(path.corners[i - 1], path.corners[i]);
         }
-
         return pathLength;
+    }
+
+
+
+    // Enemy gains knowledge from being the victim of actions similar to actions done by the player.
+    public void IncreaseKnowledge(int knowledge)
+    {
+        actionKnowledge += knowledge;
+
+        if (knowledge >= 100) { enabled = true; }
+        if (knowledge >= 200) { canCounterAction = true; }
     }
 }

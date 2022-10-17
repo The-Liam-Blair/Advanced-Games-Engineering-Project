@@ -16,6 +16,8 @@ public class TouchGrass : GoapAction
         addPrecondition("isBlue", true);
         addEffect("touchingGrass", true);
         addEffect("touchingPlayer", false);
+
+        actionEnabled = true;
     }
 
 

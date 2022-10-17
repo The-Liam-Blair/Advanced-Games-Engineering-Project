@@ -122,6 +122,7 @@ public class GoalCreation : MonoBehaviour, IGoap
         
         // Update + set enemy agent's nav mesh destination. to be the action's associated location.
         gameObject.GetComponent<NavMeshAgent>().destination = nextAction.target.transform.position;
+        nextAction.GetPathLength(gameObject.GetComponent<NavMeshAgent>().path);
 
         // Perform a distance check between enemy agent and action's associated location. If this evaluates to true, destroy the nav mesh path
         // and return true (agent is at action location). Otherwise, return false (agent needs to keep moving).
@@ -161,13 +162,8 @@ public class GoalCreation : MonoBehaviour, IGoap
                 // approximately covered 2/3's or more of the distance already
                 if (calcCost < nextAction.cost / 3f)
                 {
-                    Debug.DrawLine(transform.position, nextAction.target.transform.position, Color.red, 4);
-                    Debug.Log("MAJOR POGGIN");
-                    Debug.Log("OLD TIME: " + nextAction.currentMovementCost);
                     nextAction.resetCount++;
                     nextAction.currentMovementCost -= calcCost;
-                    Debug.Log("NEW TIME: " + nextAction.currentMovementCost);
-
                 }
             }
         }

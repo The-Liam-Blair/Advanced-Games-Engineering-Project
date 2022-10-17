@@ -16,6 +16,8 @@ public class TouchCube : GoapAction
         addPrecondition("isRed", true);
         addEffect("touchingPlayer", true);
         addEffect("touchingGrass", false);
+
+        actionEnabled = true;
     }
 
 
@@ -61,7 +63,6 @@ public class TouchCube : GoapAction
 
             // Calculate movement cost from distance / speed.
             cost = pathDist / nmAgent.speed;
-            Debug.Log(cost);
 
             // Path found, so this action is valid for the plan in it's current stage.
             return true;

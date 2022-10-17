@@ -15,6 +15,8 @@ public class TurnBlue : GoapAction
         
         addEffect("isBlue", true);
         addEffect("isRed", false);
+
+        actionEnabled = true;
     }
 
 
