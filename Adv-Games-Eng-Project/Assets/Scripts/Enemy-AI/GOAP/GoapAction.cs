@@ -37,7 +37,7 @@ public abstract class GoapAction : MonoBehaviour {
     protected int actionKnowledge;
     protected bool canCounterAction;
 
-	public GoapAction() {
+    public GoapAction() {
 		preconditions = new HashSet<KeyValuePair<string, object>> ();
 		effects = new HashSet<KeyValuePair<string, object>> ();
 

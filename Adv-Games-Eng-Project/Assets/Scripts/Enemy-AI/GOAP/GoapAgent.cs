@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Diagnostics;
 using UnityEngine.AI;
+using Debug = UnityEngine.Debug;
 
 
 public sealed class GoapAgent : MonoBehaviour {
@@ -20,8 +22,9 @@ public sealed class GoapAgent : MonoBehaviour {
 
 	private GoapPlanner planner;
 
+    private float playerAttackTimer;
 
-	void Start () {
+    void Start () {
 		stateMachine = new FSM ();
 		availableActions = new HashSet<GoapAction> ();
 		currentActions = new Queue<GoapAction> ();
@@ -34,12 +37,15 @@ public sealed class GoapAgent : MonoBehaviour {
 		loadActions ();
 
         GetComponent<NavMeshAgent>().speed = 8f;
+
+		// todo: this thing
+        playerAttackTimer = 0f;
     }
 	
 
 	void Update () {
 		stateMachine.Update (this.gameObject);
-	}
+    }
 
 
 	public void addAction(GoapAction a) {
@@ -70,9 +76,10 @@ public sealed class GoapAgent : MonoBehaviour {
 			HashSet<KeyValuePair<string,object>> worldState = dataProvider.getWorldState();
 			HashSet<KeyValuePair<string,object>> goal = dataProvider.createGoalState();
 
-			// Plan
-			Queue<GoapAction> plan = planner.plan(gameObject, availableActions, worldState, goal);
-			if (plan != null) {
+            // Plan
+            Queue<GoapAction> plan = planner.plan(gameObject, availableActions, worldState, goal);
+            
+            if (plan != null) {
 				// we have a plan, hooray!
 				currentActions = plan;
 				dataProvider.planFound(goal, plan);
@@ -145,8 +152,9 @@ public sealed class GoapAgent : MonoBehaviour {
 
 			GoapAction action = currentActions.Peek();
 			if ( action.isDone() ) {
-				// the action is done. Remove it so we can perform the next one
-				currentActions.Dequeue();
+                
+                // the action is done. Remove it so we can perform the next one
+                currentActions.Dequeue();
 			}
 
 			if (hasActionPlan()) {
@@ -158,9 +166,10 @@ public sealed class GoapAgent : MonoBehaviour {
 					// we are in range, so perform the action
 					bool success = action.perform(gameObj);
 
-					if (!success) {
+                    if (!success) {
 						// action failed, we need to plan again
-						fsm.popState();
+
+                        fsm.popState();
 						fsm.pushState(idleState);
 						dataProvider.planAborted(action);
 					}
@@ -230,4 +239,5 @@ public sealed class GoapAgent : MonoBehaviour {
 		String s = ""+action.GetType().Name;
 		return s;
 	}
+
 }

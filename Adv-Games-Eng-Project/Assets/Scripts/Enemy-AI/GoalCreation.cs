@@ -2,13 +2,18 @@ using System;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using UnityEngine.AI;
 using UnityEngine.UIElements;
 using static UnityEngine.GraphicsBuffer;
+using Debug = UnityEngine.Debug;
+using Object = System.Object;
+using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
+using static System.Collections.Specialized.BitVector32;
 
 
 public enum GOALS
@@ -35,6 +40,10 @@ public class GoalCreation : MonoBehaviour, IGoap
         worldData.Add(new KeyValuePair<string, object>("isBlue", gameObject.GetComponent<Renderer>().material.color == Color.blue));
         worldData.Add(new KeyValuePair<string, object>("isRed", gameObject.GetComponent<Renderer>().material.color == Color.red));
 
+        worldData.Add(new KeyValuePair<string, object>("canSeePlayer", true));
+        // world data or alt method for recording last player chase time to prevent spam chases.
+
+
         return worldData;
 	}
 
@@ -50,6 +59,7 @@ public class GoalCreation : MonoBehaviour, IGoap
         
         // Pre-define every goal the enemy may select from, populate into list.
         HashSet<KeyValuePair<string, object>> goalList = new HashSet<KeyValuePair<string, object>>();
+        
         goalList.Add(new KeyValuePair<string, object>("touchingPlayer", true));
         goalList.Add(new KeyValuePair<string, object>("touchingGrass", true));
 
@@ -103,11 +113,8 @@ public class GoalCreation : MonoBehaviour, IGoap
 	}
 
     /**
-     * Instructs the enemy agent to move to a specific location, currently only the action's associated location (if it exists). Modified to
-     * call the nav mesh component for proper path finding. If an action does not have an associated location, this function is not called.
-     * For predictive pathfinding: Modify this to be able to access region confidence values.
-     *
      * Called once per frame while the enemy agent is in the 'MoveTo' state.
+     * Contains most dynamic game logic, such as dynamic movement cost checking and detecting objects.
      *
      *
      * Minor problem with nav mesh path-finding: when the agent approaches a narrow mesh strip, it will intrinsically slow down as it thinks it's about to
@@ -118,20 +125,30 @@ public class GoalCreation : MonoBehaviour, IGoap
      *  - But: Utilize ray-casting to detect any specific obstacles, like player projectiles. If one is detected, TEMPORARILY set the obstacle quality to high
      *    to dodge it, then set it back to none afterwards.
      */
-    public bool moveAgent(GoapAction nextAction) {
+    public bool moveAgent(GoapAction nextAction) 
+    {
         
+        /////////////////////////////////
+        //// -- UPDATE AGENT PATH -- ////
+        /////////////////////////////////
+
         // Update + set enemy agent's nav mesh destination. to be the action's associated location.
         gameObject.GetComponent<NavMeshAgent>().destination = nextAction.target.transform.position;
         nextAction.GetPathLength(gameObject.GetComponent<NavMeshAgent>().path);
+        
+        
+        ///////////////////////////////////
+        //// -- CHECK MOVEMENT COST -- ////
+        ///////////////////////////////////
 
         // Perform a distance check between enemy agent and action's associated location. If this evaluates to true, destroy the nav mesh path
         // and return true (agent is at action location). Otherwise, return false (agent needs to keep moving).
-        if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 2f ) 
+        if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 2f)
         {
-			nextAction.setInRange(true);
+            nextAction.setInRange(true);
             nextAction.gameObject.GetComponent<NavMeshAgent>().ResetPath();
             return true;
-		}
+        }
 
         // Update current movement cost of this action. Value is halved to scale it approximately to the pre-calculated cost of the action.
         nextAction.currentMovementCost += Time.deltaTime * 0.5f;
@@ -154,8 +171,6 @@ public class GoalCreation : MonoBehaviour, IGoap
             // Algorithm will only reduce the current action time 3 times to stop the enemy from endlessly //ursuing a target.
             else if (nextAction.resetCount < 3)
             {
-                // todo: fix pathfind distance algorithm, isnae working (For this case only).
-
                 float dist = Vector3.Distance(transform.position, nextAction.target.transform.position);
                 float calcCost = dist / nextAction.currentMovementCost;
 
@@ -167,10 +182,56 @@ public class GoalCreation : MonoBehaviour, IGoap
                 }
             }
         }
+
+        ///////////////////////////////////////////////
+        //// -- HANDLE RAY CAST/SIGHT DETECTION -- ////
+        ///////////////////////////////////////////////
+        /// 
+
+        // Draw 10 rays in a fan-like spread in front of the enemy. This construct represents it's sight.
+        RaycastHit[] hits = new RaycastHit[10];
+        
+        for (int i = -5; i < 5; i++)
+        {
+            if (Physics.Raycast(transform.position,
+                    Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 5f, // Partial thanks to github co-pilot for coming up with a
+                    out hits[i + 5],                                                                  // solution that allowed the ray to rotate properly w/o deforming!
+                    5f))
+            {
+                // Player found, top priority! Abort the current plan and pursue the player.
+                // If already chased player recently, don't chase again (Prevents endless chases).
+                var worldData = getWorldState();
+                var output =  from action in worldData 
+                    where worldData.Contains(new KeyValuePair<string, object>("recentlyAttackedPlayer", false)) select action;
+
+                // 
+                bool playerRecentlyAttacked = output.Any();
+                if (hits[i + 5].collider.gameObject.tag == "Player" && !playerRecentlyAttacked)
+                {
+                    // Player is able to be attacked. Drop everything and attack!
+
+                    // Preemptively end current action and cancel it to force the plan to collapse, and be re-planned.
+                    nextAction.currentCostTooHigh = true;
+                    nextAction.setInRange(true);
+
+                    // todo: implement the world state "recently attack player", find a way to change this dyanmically to true/false after a time period.
+                    // todo: also implement another world state where the player is visible currently, such that it's the primary factor in insistence calculations.
+
+                    return true;
+                }
+            }
+        }
+
+
+        /////////////////////////////
+        //// -- HANDLE TIMERS -- ////
+        /////////////////////////////
+
+        // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
         return false;
 	}
-
-	// Black magic 2 returned variables!
+    
+    // Black magic 2 returned variables!
 	// Determines what goal to choose. Currently very inefficient, kept however for readability and will be properly updated later on.
 	// todo: do some fancy actual calculations (lookup utility ai) to properly determine goal insistence values.
     public (string, object) DetermineGoal(HashSet<KeyValuePair<string, object>> worldState, HashSet<KeyValuePair<string, object>> goalList)
@@ -208,8 +269,11 @@ public class GoalCreation : MonoBehaviour, IGoap
             switch (aGoal)
             {
                 case GOALS.TOUCHPLAYER:
+                    // Can only attack player if location is known. Set insistence value to be negative and only has a chance of being
+                    // priority if the enemy can see the player.
                     if (touchingGrass) { Insistence += 1; }
                     if (isRed) { Insistence += 1; }
+                    //if (canSeePlayer) { Insistence += 100; } // Getting player is top priority.
                     goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
                     break;
 
@@ -234,7 +298,7 @@ public class GoalCreation : MonoBehaviour, IGoap
                 goalFlag = goalList.Contains(new KeyValuePair<string, object>(goal, true));
             }
         }
-        
+
         // Always returns highest insistence goal and the desired goal state.
         return (goal, goalFlag);
     }

@@ -75,6 +75,9 @@ public class TouchGrass : GoapAction
     // Implementation of the action itself, does not include movement: Only the action AFTER arriving to the correct location.
     public override bool perform(GameObject agent)
     {
+        // Action is forcefully run when it's running cost becomes too high. This checks if that condition has been triggered.
+        if (!base.perform(agent)) { return false; };
+        
         movedThere = true;
         return true;
     }
