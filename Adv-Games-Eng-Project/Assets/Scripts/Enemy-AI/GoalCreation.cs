@@ -27,46 +27,53 @@ public enum GOALS
  */
 public class GoalCreation : MonoBehaviour, IGoap
 {
+
+    public GoapAgent.CurrentWorldKnowledge WorldData;
+
+    void Start()
+    {
+        WorldData = GetComponent<GoapAgent>().WorldData;
+    }
+
     /**
 	 * Returns all the (known) world state that the enemy has perceived.
      * World state in this instance is boolean values that represent different attributes of the world and their state.
 	 */
-	public HashSet<KeyValuePair<string,object>> getWorldState () {
-		HashSet<KeyValuePair<string,object>> worldData = new HashSet<KeyValuePair<string,object>> ();
-        
-        worldData.Add(new KeyValuePair<string, object>("touchingPlayer", (gameObject.transform.position - GameObject.Find("Player").transform.position).magnitude < 2f));
-        worldData.Add(new KeyValuePair<string, object>("touchingGrass", (gameObject.transform.position - GameObject.Find("Grass").transform.position).magnitude < 2f));
+	public HashSet<KeyValuePair<string,bool>> getWorldState () {
+        WorldData.ClearData();
 
-        worldData.Add(new KeyValuePair<string, object>("isBlue", gameObject.GetComponent<Renderer>().material.color == Color.blue));
-        worldData.Add(new KeyValuePair<string, object>("isRed", gameObject.GetComponent<Renderer>().material.color == Color.red));
+        WorldData.AddData(new KeyValuePair<string, bool>("touchingPlayer", (gameObject.transform.position - GameObject.Find("Player").transform.position).magnitude < 2f));
+        WorldData.AddData(new KeyValuePair<string, bool>("touchingGrass", (gameObject.transform.position - GameObject.Find("Grass").transform.position).magnitude < 2f));
 
-        worldData.Add(new KeyValuePair<string, object>("canSeePlayer", true));
+        WorldData.AddData(new KeyValuePair<string, bool>("isRed", gameObject.GetComponent<Renderer>().material.color == Color.red));
+
+        return WorldData.GetWorldState();
+
+        //WorldData.AddData(new KeyValuePair<string,bool>("canSeePlayer", true));
         // world data or alt method for recording last player chase time to prevent spam chases.
 
-
-        return worldData;
-	}
+    }
 
     /**
      * Called before planning to decide what goal (end effect of an action) the agent should pursue.
      * Firstly acquires the current world state and list of all selectable goals and decides the goal to pursue using their insistence values.
      * Returns the goal with the highest insistence (priority) value.
 	 */
-    public HashSet<KeyValuePair<string, object>> createGoalState()
+    public HashSet<KeyValuePair<string, bool>> createGoalState()
     {
         // Holds a singular goal (Can hold multiple but node expansion will try to satisfy every goal condition at once, cannot natively handle multiple goals).
-        HashSet<KeyValuePair<string, object>> goal = new HashSet<KeyValuePair<string, object>>();
+        HashSet<KeyValuePair<string, bool>> goal = new HashSet<KeyValuePair<string, bool>>();
         
         // Pre-define every goal the enemy may select from, populate into list.
-        HashSet<KeyValuePair<string, object>> goalList = new HashSet<KeyValuePair<string, object>>();
+        HashSet<KeyValuePair<string, bool>> goalList = new HashSet<KeyValuePair<string, bool>>();
         
-        goalList.Add(new KeyValuePair<string, object>("touchingPlayer", true));
-        goalList.Add(new KeyValuePair<string, object>("touchingGrass", true));
+        goalList.Add(new KeyValuePair<string, bool>("touchingPlayer", true));
+        goalList.Add(new KeyValuePair<string, bool>("touchingGrass", true));
 
         // Do some maf to calculate which goal should be chosen at this current moment.
-        (string, object) cheapestGoalData = DetermineGoal(getWorldState(), goalList);
+        (string, bool) cheapestGoalData = DetermineGoal(getWorldState(), goalList);
         
-        goal.Add(new KeyValuePair<string, object>(cheapestGoalData.Item1, cheapestGoalData.Item2));
+        goal.Add(new KeyValuePair<string, bool>(cheapestGoalData.Item1, cheapestGoalData.Item2));
         return goal;
     }
 
@@ -78,13 +85,13 @@ public class GoalCreation : MonoBehaviour, IGoap
 	 * Alternatively, world state can be updated in this function to (potentially) cancel out a failed plan feedback loop. Not necessary however so left out
 	 * for now.
 	 */
-    public void planFailed (HashSet<KeyValuePair<string, object>> failedGoal)
+    public void planFailed (HashSet<KeyValuePair<string, bool>> failedGoal)
 	{}
 
 	/**
 	 * Called every time a plan has been completed fully, including a relevant action set generated that results in the completion of a goal.
 	 */
-	public void planFound (HashSet<KeyValuePair<string, object>> goal, Queue<GoapAction> actions)
+	public void planFound (HashSet<KeyValuePair<string, bool>> goal, Queue<GoapAction> actions)
 	{
 		Debug.Log ("<color=green>Plan found</color> "+GoapAgent.prettyPrint(actions));
 	}
@@ -183,6 +190,7 @@ public class GoalCreation : MonoBehaviour, IGoap
             }
         }
 
+
         ///////////////////////////////////////////////
         //// -- HANDLE RAY CAST/SIGHT DETECTION -- ////
         ///////////////////////////////////////////////
@@ -198,11 +206,12 @@ public class GoalCreation : MonoBehaviour, IGoap
                     out hits[i + 5],                                                                  // solution that allowed the ray to rotate properly w/o deforming!
                     5f))
             {
-                // Player found, top priority! Abort the current plan and pursue the player.
-                // If already chased player recently, don't chase again (Prevents endless chases).
+             
+                // Leaving this in case for future reference. Non-functional and whatnot.
+                /*
                 var worldData = getWorldState();
                 var output =  from action in worldData 
-                    where worldData.Contains(new KeyValuePair<string, object>("recentlyAttackedPlayer", false)) select action;
+                    where worldData.Contains(new KeyValuePair<string,bool>("recentlyAttackedPlayer", false)) select action.Value;
 
                 // 
                 bool playerRecentlyAttacked = output.Any();
@@ -216,9 +225,11 @@ public class GoalCreation : MonoBehaviour, IGoap
 
                     // todo: implement the world state "recently attack player", find a way to change this dyanmically to true/false after a time period.
                     // todo: also implement another world state where the player is visible currently, such that it's the primary factor in insistence calculations.
+                
 
                     return true;
                 }
+                */
             }
         }
 
@@ -234,7 +245,7 @@ public class GoalCreation : MonoBehaviour, IGoap
     // Black magic 2 returned variables!
 	// Determines what goal to choose. Currently very inefficient, kept however for readability and will be properly updated later on.
 	// todo: do some fancy actual calculations (lookup utility ai) to properly determine goal insistence values.
-    public (string, object) DetermineGoal(HashSet<KeyValuePair<string, object>> worldState, HashSet<KeyValuePair<string, object>> goalList)
+    public (string, bool) DetermineGoal(HashSet<KeyValuePair<string, bool>> worldState, HashSet<KeyValuePair<string, bool>> goalList)
     {
 
         GOALS aGoal;
@@ -244,11 +255,10 @@ public class GoalCreation : MonoBehaviour, IGoap
         bool goalFlag = false;
 
         // Init some world data for use later. Wasteful but kept for readability currently.
-        bool touchingPlayer = worldState.Contains(new KeyValuePair<string, object>("touchingPlayer", true));
-        bool touchingGrass = worldState.Contains(new KeyValuePair<string, object>("touchingGrass", true));
+        bool touchingPlayer = worldState.Contains(new KeyValuePair<string, bool>("touchingPlayer", true));
+        bool touchingGrass = worldState.Contains(new KeyValuePair<string, bool>("touchingGrass", true));
 
-        bool isRed = worldState.Contains(new KeyValuePair<string, object>("isRed", true));
-        bool isBlue = worldState.Contains(new KeyValuePair<string, object>("isBlue", true));
+        bool isRed = worldState.Contains(new KeyValuePair<string, bool>("isRed", true));
 
         // List of goals and their associated insistence values.
         HashSet<KeyValuePair<string, int>> goalIValues = new HashSet<KeyValuePair<string, int>>();
@@ -269,8 +279,6 @@ public class GoalCreation : MonoBehaviour, IGoap
             switch (aGoal)
             {
                 case GOALS.TOUCHPLAYER:
-                    // Can only attack player if location is known. Set insistence value to be negative and only has a chance of being
-                    // priority if the enemy can see the player.
                     if (touchingGrass) { Insistence += 1; }
                     if (isRed) { Insistence += 1; }
                     //if (canSeePlayer) { Insistence += 100; } // Getting player is top priority.
@@ -279,7 +287,7 @@ public class GoalCreation : MonoBehaviour, IGoap
 
                 case GOALS.TOUCHGRASS:
                     if (touchingPlayer) { Insistence += 1; }
-                    if (isBlue) { Insistence += 1; }
+                    if (!isRed) { Insistence += 1; }
                     goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
                     break;
             }
@@ -295,7 +303,7 @@ public class GoalCreation : MonoBehaviour, IGoap
                 max = goalIValues.ElementAt(i).Value;
                 
                 goal = goalIValues.ElementAt(i).Key;
-                goalFlag = goalList.Contains(new KeyValuePair<string, object>(goal, true));
+                goalFlag = goalList.Contains(new KeyValuePair<string, bool>(goal, true));
             }
         }
 

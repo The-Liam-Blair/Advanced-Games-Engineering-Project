@@ -7,10 +7,10 @@ using UnityEngine.AI;
 public abstract class GoapAction : MonoBehaviour {
 
 	// Preconditions need to be satisfied before an action is able to be run.
-	private HashSet<KeyValuePair<string,object>> preconditions;
+	private HashSet<KeyValuePair<string, bool>> preconditions;
 
 	// Effects are the outcomes of running an action to completion.
-	private HashSet<KeyValuePair<string,object>> effects;
+	private HashSet<KeyValuePair<string,bool>> effects;
     
 	private bool inRange = false;
     
@@ -38,8 +38,8 @@ public abstract class GoapAction : MonoBehaviour {
     protected bool canCounterAction;
 
     public GoapAction() {
-		preconditions = new HashSet<KeyValuePair<string, object>> ();
-		effects = new HashSet<KeyValuePair<string, object>> ();
+		preconditions = new HashSet<KeyValuePair<string,bool>> ();
+		effects = new HashSet<KeyValuePair<string,bool>> ();
 
         actionKnowledge = 0;
         canCounterAction = false;
@@ -86,55 +86,55 @@ public abstract class GoapAction : MonoBehaviour {
 	}
 
 	// Add or remove effects or preconditions to an action.
-	public void addPrecondition(string key, object value) 
+	public void addPrecondition(string key, bool value) 
     {
-		preconditions.Add (new KeyValuePair<string, object>(key, value) );
+		preconditions.Add (new KeyValuePair<string,bool>(key, value) );
 	}
     public void removePrecondition(string key) 
     {
-		KeyValuePair<string, object> remove = default(KeyValuePair<string,object>);
-		foreach (KeyValuePair<string, object> kvp in preconditions) 
+		KeyValuePair<string,bool> remove = default(KeyValuePair<string,bool>);
+		foreach (KeyValuePair<string,bool> kvp in preconditions) 
         {
             if (kvp.Key.Equals(key))
             {
                 remove = kvp;
             }
         }
-        if (!default(KeyValuePair<string, object>).Equals(remove))
+        if (!default(KeyValuePair<string,bool>).Equals(remove))
         {
             preconditions.Remove(remove);
         }
     }
 
-    public void addEffect(string key, object value) 
+    public void addEffect(string key, bool value) 
     {
-		effects.Add (new KeyValuePair<string, object>(key, value) );
+		effects.Add (new KeyValuePair<string,bool>(key, value) );
 	}
     public void removeEffect(string key) 
     {
-		KeyValuePair<string, object> remove = default(KeyValuePair<string,object>);
-		foreach (KeyValuePair<string, object> kvp in effects) 
+		KeyValuePair<string,bool> remove = default(KeyValuePair<string,bool>);
+		foreach (KeyValuePair<string,bool> kvp in effects) 
         {
             if (kvp.Key.Equals(key))
             {
                 remove = kvp;
             }
         }
-        if (!default(KeyValuePair<string, object>).Equals(remove))
+        if (!default(KeyValuePair<string,bool>).Equals(remove))
         {
             effects.Remove(remove);
         }
     }
 
     // Action preconditions and effects getters.
-    public HashSet<KeyValuePair<string, object>> Preconditions 
+    public HashSet<KeyValuePair<string,bool>> Preconditions 
     {
 		get 
         {
 			return preconditions;
 		}
 	}
-    public HashSet<KeyValuePair<string, object>> Effects 
+    public HashSet<KeyValuePair<string,bool>> Effects 
     {
 		get 
         {

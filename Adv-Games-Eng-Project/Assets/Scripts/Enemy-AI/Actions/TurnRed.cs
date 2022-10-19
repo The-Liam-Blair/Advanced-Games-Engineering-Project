@@ -14,7 +14,6 @@ public class TurnRed : GoapAction
         addPrecondition("isRed", false);
         
         addEffect("isRed", true);
-        addEffect("isBlue", false);
 
         actionEnabled = true;
     }

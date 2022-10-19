@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Xml.Schema;
 using UnityEngine.AI;
 using Debug = UnityEngine.Debug;
 
@@ -22,7 +24,7 @@ public sealed class GoapAgent : MonoBehaviour {
 
 	private GoapPlanner planner;
 
-    private float playerAttackTimer;
+    public CurrentWorldKnowledge WorldData;
 
     void Start () {
 		stateMachine = new FSM ();
@@ -38,8 +40,7 @@ public sealed class GoapAgent : MonoBehaviour {
 
         GetComponent<NavMeshAgent>().speed = 8f;
 
-		// todo: this thing
-        playerAttackTimer = 0f;
+        WorldData = new CurrentWorldKnowledge();
     }
 	
 
@@ -73,8 +74,8 @@ public sealed class GoapAgent : MonoBehaviour {
 			// GOAP planning
 
 			// get the world state and the goal we want to plan for
-			HashSet<KeyValuePair<string,object>> worldState = dataProvider.getWorldState();
-			HashSet<KeyValuePair<string,object>> goal = dataProvider.createGoalState();
+			HashSet<KeyValuePair<string,bool>> worldState = dataProvider.getWorldState();
+			HashSet<KeyValuePair<string,bool>> goal = dataProvider.createGoalState();
 
             // Plan
             Queue<GoapAction> plan = planner.plan(gameObject, availableActions, worldState, goal);
@@ -207,9 +208,9 @@ public sealed class GoapAgent : MonoBehaviour {
 		Debug.Log("Found actions: "+prettyPrint(actions));
 	}
 
-	public static string prettyPrint(HashSet<KeyValuePair<string,object>> state) {
+	public static string prettyPrint(HashSet<KeyValuePair<string,bool>> state) {
 		String s = "";
-		foreach (KeyValuePair<string,object> kvp in state) {
+		foreach (KeyValuePair<string,bool> kvp in state) {
 			s += kvp.Key + ":" + kvp.Value.ToString();
 			s += ", ";
 		}
@@ -239,5 +240,88 @@ public sealed class GoapAgent : MonoBehaviour {
 		String s = ""+action.GetType().Name;
 		return s;
 	}
+
+	// Stores current world state and methods to freely modify it.
+    public class CurrentWorldKnowledge
+    {
+		// Stores world changes as a key value pair of a fact about the world and if it's true or false.
+        public HashSet<KeyValuePair<string, bool>> WorldData;
+
+        public CurrentWorldKnowledge()
+        {
+            WorldData = new HashSet<KeyValuePair<string, bool>>();
+        }
+
+		/// <summary>
+		/// Add a fact to the knowledge list.
+		/// </summary>
+		/// <param name="data">New data fact to add.</param>
+        public void AddData(KeyValuePair<string, bool> data)
+        {
+            WorldData.Add(data);
+        }
+
+		/// <summary>
+		/// Remove a fact from the list
+		/// </summary>
+		/// <param name="removalData">The fact to remove from the knowledge list</param>
+		/// <returns>True: Successful erasure.<br></br> False: Erasure failure.</returns>
+        public bool RemoveData(KeyValuePair<string, bool> removalData)
+        {
+			return WorldData.Remove(removalData);
+        }
+
+		/// <summary>
+		/// World State getter
+		/// </summary>
+		/// <returns>Current world state.</returns>
+        public HashSet<KeyValuePair<string, bool>> GetWorldState()
+        {
+
+            return WorldData;
+        }
+
+		/// <summary>
+		/// Modifies a fact's state. Fact needs to already exist in the current world state.
+		/// </summary>
+		/// <param name="newData">The fact that will be modified.</param>
+		/// <returns>True: Successful fact modification <br></br> False: Fact was not found within the knowledge base, operation failed.</returns>
+        public bool EditDataValue(KeyValuePair<string, bool> newData)
+        {
+            foreach (var data in WorldData)
+            {
+                if (newData.Key == data.Key)
+                {
+                    if (RemoveData(data))
+                    {
+                        WorldData.Add((newData));
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+		/// <summary>
+		/// Removes all facts from the knowledge base.
+		/// </summary>
+        public void ClearData()
+        {
+			WorldData.Clear();
+        }
+
+		// List of facts string output.
+        public override string ToString()
+        {
+            string output = "";
+
+            foreach (var data in WorldData)
+            {
+                output += data.ToString() + "\n";
+            }
+            return output;
+        }
+
+    }
 
 }

@@ -11,9 +11,8 @@ public class TurnBlue : GoapAction
     // Init preconditions and effects.
     public TurnBlue()
     {
-        addPrecondition("isBlue", false);
-        
-        addEffect("isBlue", true);
+        addPrecondition("isRed", true);
+
         addEffect("isRed", false);
 
         actionEnabled = true;
