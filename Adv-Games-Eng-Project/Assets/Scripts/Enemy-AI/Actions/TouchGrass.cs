@@ -79,6 +79,8 @@ public class TouchGrass : GoapAction
         if (!base.perform(agent)) { return false; };
         
         movedThere = true;
+        UpdateWorldState();
+
         return true;
     }
 }

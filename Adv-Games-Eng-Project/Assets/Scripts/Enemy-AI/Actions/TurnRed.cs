@@ -49,7 +49,8 @@ public class TurnRed : GoapAction
     {
         gameObject.GetComponent<Renderer>().material.color = Color.red;
         isRed = true;
-        
+        UpdateWorldState();
+
         return true;
     }
 }

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Xml.Schema;
 using UnityEngine.AI;
@@ -250,6 +251,7 @@ public sealed class GoapAgent : MonoBehaviour {
         public CurrentWorldKnowledge()
         {
             WorldData = new HashSet<KeyValuePair<string, bool>>();
+            WorldData.Add(new KeyValuePair<string, bool>("touchingPlayer", false));
         }
 
 		/// <summary>
@@ -282,10 +284,10 @@ public sealed class GoapAgent : MonoBehaviour {
         }
 
 		/// <summary>
-		/// Modifies a fact's state. Fact needs to already exist in the current world state.
+		/// Modifies a fact's state. If it does not exist, add it as a new fact (Returns false in this case to indicate a new fact is made, in case of spelling mistakes, etc).
 		/// </summary>
 		/// <param name="newData">The fact that will be modified.</param>
-		/// <returns>True: Successful fact modification <br></br> False: Fact was not found within the knowledge base, operation failed.</returns>
+		/// <returns>True: Successful fact modification <br></br> False: Fact was not found in the knowledge base and so a new fact is made.</returns>
         public bool EditDataValue(KeyValuePair<string, bool> newData)
         {
             foreach (var data in WorldData)
@@ -299,10 +301,27 @@ public sealed class GoapAgent : MonoBehaviour {
                     }
                 }
             }
+
+			// Called if the above code block doesn't find any existing data, so adds it as a new fact here.
+            WorldData.Add(newData);
+			// Returns false to indicate that the fact is new, not as an error/indication of a failed operation.
             return false;
         }
 
-		/// <summary>
+        public bool GetFactState(string fact, bool state)
+        {
+            foreach (var factString in WorldData)
+            {
+				// Fact string found in knowledge base: return it's state.
+				if(factString.Key == fact) { return WorldData.Contains(new KeyValuePair<string, bool>(fact, state)); }
+            }
+
+			// Fact string not found in knowledge base: Create a new fact with it's state set to false.
+            WorldData.Add(new KeyValuePair<string, bool>(fact, false));
+            return false;
+        }
+
+        /// <summary>
 		/// Removes all facts from the knowledge base.
 		/// </summary>
         public void ClearData()

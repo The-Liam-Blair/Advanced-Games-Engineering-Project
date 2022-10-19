@@ -39,18 +39,10 @@ public class GoalCreation : MonoBehaviour, IGoap
 	 * Returns all the (known) world state that the enemy has perceived.
      * World state in this instance is boolean values that represent different attributes of the world and their state.
 	 */
-	public HashSet<KeyValuePair<string,bool>> getWorldState () {
-        WorldData.ClearData();
-
-        WorldData.AddData(new KeyValuePair<string, bool>("touchingPlayer", (gameObject.transform.position - GameObject.Find("Player").transform.position).magnitude < 2f));
-        WorldData.AddData(new KeyValuePair<string, bool>("touchingGrass", (gameObject.transform.position - GameObject.Find("Grass").transform.position).magnitude < 2f));
-
-        WorldData.AddData(new KeyValuePair<string, bool>("isRed", gameObject.GetComponent<Renderer>().material.color == Color.red));
-
+	public HashSet<KeyValuePair<string,bool>> getWorldState () 
+    {
+        Debug.Log(WorldData.ToString());
         return WorldData.GetWorldState();
-
-        //WorldData.AddData(new KeyValuePair<string,bool>("canSeePlayer", true));
-        // world data or alt method for recording last player chase time to prevent spam chases.
 
     }
 
@@ -71,7 +63,7 @@ public class GoalCreation : MonoBehaviour, IGoap
         goalList.Add(new KeyValuePair<string, bool>("touchingGrass", true));
 
         // Do some maf to calculate which goal should be chosen at this current moment.
-        (string, bool) cheapestGoalData = DetermineGoal(getWorldState(), goalList);
+        (string, bool) cheapestGoalData = DetermineGoal(goalList);
         
         goal.Add(new KeyValuePair<string, bool>(cheapestGoalData.Item1, cheapestGoalData.Item2));
         return goal;
@@ -245,7 +237,7 @@ public class GoalCreation : MonoBehaviour, IGoap
     // Black magic 2 returned variables!
 	// Determines what goal to choose. Currently very inefficient, kept however for readability and will be properly updated later on.
 	// todo: do some fancy actual calculations (lookup utility ai) to properly determine goal insistence values.
-    public (string, bool) DetermineGoal(HashSet<KeyValuePair<string, bool>> worldState, HashSet<KeyValuePair<string, bool>> goalList)
+    public (string, bool) DetermineGoal(HashSet<KeyValuePair<string, bool>> goalList)
     {
 
         GOALS aGoal;
@@ -255,10 +247,10 @@ public class GoalCreation : MonoBehaviour, IGoap
         bool goalFlag = false;
 
         // Init some world data for use later. Wasteful but kept for readability currently.
-        bool touchingPlayer = worldState.Contains(new KeyValuePair<string, bool>("touchingPlayer", true));
-        bool touchingGrass = worldState.Contains(new KeyValuePair<string, bool>("touchingGrass", true));
+        bool touchingPlayer = WorldData.GetFactState("touchingPlayer", true);
+        bool touchingGrass = WorldData.GetFactState("touchingGrass", true);
 
-        bool isRed = worldState.Contains(new KeyValuePair<string, bool>("isRed", true));
+        bool isRed = WorldData.GetFactState("isRed", true);
 
         // List of goals and their associated insistence values.
         HashSet<KeyValuePair<string, int>> goalIValues = new HashSet<KeyValuePair<string, int>>();
@@ -279,14 +271,14 @@ public class GoalCreation : MonoBehaviour, IGoap
             switch (aGoal)
             {
                 case GOALS.TOUCHPLAYER:
-                    if (touchingGrass) { Insistence += 1; }
+                    if (touchingGrass || !touchingPlayer) { Insistence += 1; }
                     if (isRed) { Insistence += 1; }
                     //if (canSeePlayer) { Insistence += 100; } // Getting player is top priority.
                     goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
                     break;
 
                 case GOALS.TOUCHGRASS:
-                    if (touchingPlayer) { Insistence += 1; }
+                    if (touchingPlayer || !touchingGrass) { Insistence += 1; }
                     if (!isRed) { Insistence += 1; }
                     goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
                     break;

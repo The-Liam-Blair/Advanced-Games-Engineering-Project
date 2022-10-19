@@ -37,6 +37,13 @@ public abstract class GoapAction : MonoBehaviour {
     protected int actionKnowledge;
     protected bool canCounterAction;
 
+    public GoapAgent.CurrentWorldKnowledge WorldData;
+
+    void Start()
+    {
+        WorldData = GetComponent<GoapAgent>().WorldData;
+    }
+
     public GoapAction() {
 		preconditions = new HashSet<KeyValuePair<string,bool>> ();
 		effects = new HashSet<KeyValuePair<string,bool>> ();
@@ -45,17 +52,18 @@ public abstract class GoapAction : MonoBehaviour {
         canCounterAction = false;
     }
 
-	public void doReset() {
+    public void doReset() {
 		inRange = false;
 		target = null;
 		reset ();
         currentMovementCost = 0f;
         currentCostTooHigh = false;
         resetCount = 0;
+        WorldData = GetComponent<GoapAgent>().WorldData;
     }
-    
+
     // Reset action after it's been used.
-	public abstract void reset();
+    public abstract void reset();
     
 	// Check if the action has been completed yet.
 	public abstract bool isDone();
@@ -160,6 +168,17 @@ public abstract class GoapAction : MonoBehaviour {
             pathLength += Vector3.Distance(path.corners[i - 1], path.corners[i]);
         }
         return pathLength;
+    }
+
+    /// <summary>
+    /// Called after an action is successfully performed; updates the world state fact base using the effect(s) of the action.
+    /// </summary>
+    public void UpdateWorldState()
+    {
+        foreach (var effect in Effects)
+        {
+           WorldData.EditDataValue(effect);
+        }
     }
 
 
