@@ -12,9 +12,9 @@ public class TouchCube : GoapAction
     // Init preconditions and effects.
     public TouchCube()
     {
-        addPrecondition("touchingPlayer", false);
+        addPrecondition("touchingCube", false);
         addPrecondition("isRed", true);
-        addEffect("touchingPlayer", true);
+        addEffect("touchingCube", true);
         addEffect("touchingGrass", false);
 
         actionEnabled = true;
@@ -45,7 +45,7 @@ public class TouchCube : GoapAction
     public override bool checkProceduralPrecondition(GameObject agent)
     {
         // Right now player position is always known, will be updated later to be predicted.
-        target = GameObject.Find("Player");
+        target = GameObject.Find("Cube");
 
         // Get cost from time to target (distance / speed) Speed is constant so acceleration isn't calculated.
         // Since path to target isn't created yet, one must be sampled (but not exactly instantiated) to test for distance.

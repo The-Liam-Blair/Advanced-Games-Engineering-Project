@@ -18,8 +18,9 @@ using static System.Collections.Specialized.BitVector32;
 
 public enum GOALS
 {
-    TOUCHPLAYER,
-    TOUCHGRASS
+    TOUCHCUBE,
+    TOUCHGRASS,
+    CHASEPLAYER
 };
 
 /**
@@ -43,7 +44,6 @@ public class GoalCreation : MonoBehaviour, IGoap
     {
         Debug.Log(WorldData.ToString());
         return WorldData.GetWorldState();
-
     }
 
     /**
@@ -59,12 +59,14 @@ public class GoalCreation : MonoBehaviour, IGoap
         // Pre-define every goal the enemy may select from, populate into list.
         HashSet<KeyValuePair<string, bool>> goalList = new HashSet<KeyValuePair<string, bool>>();
         
-        goalList.Add(new KeyValuePair<string, bool>("touchingPlayer", true));
+        goalList.Add(new KeyValuePair<string, bool>("touchingCube", true));
         goalList.Add(new KeyValuePair<string, bool>("touchingGrass", true));
+        goalList.Add(new KeyValuePair<string, bool>("foundPlayer", true));
 
         // Do some maf to calculate which goal should be chosen at this current moment.
         (string, bool) cheapestGoalData = DetermineGoal(goalList);
         
+        // Return the chosen goal to the planner.
         goal.Add(new KeyValuePair<string, bool>(cheapestGoalData.Item1, cheapestGoalData.Item2));
         return goal;
     }
@@ -153,7 +155,7 @@ public class GoalCreation : MonoBehaviour, IGoap
         nextAction.currentMovementCost += Time.deltaTime * 0.5f;
         
         // Check current movement cost to the expected action movement cost.
-        if (nextAction.currentMovementCost > nextAction.cost)
+        if (nextAction.currentMovementCost > nextAction.cost && GoapAgent.playerChaseTime < 0.1f)
         {
             // Movement cost is just too high, abort the plan (Force the action function to run null and return false, causing the plan to collapse and be restarted).
             if (nextAction.currentMovementCost > nextAction.cost * 2)
@@ -167,13 +169,13 @@ public class GoalCreation : MonoBehaviour, IGoap
             // If this distance is short, reduce the current movement cost slightly to make the enemy pursue this action for longer in the hopes that
             // it reaches it within a still-reasonable time frame.
 
-            // Algorithm will only reduce the current action time 3 times to stop the enemy from endlessly //ursuing a target.
+            // Algorithm will only reduce the current action time 3 times to stop the enemy from endlessly pursuing a target.
             else if (nextAction.resetCount < 3)
             {
                 float dist = Vector3.Distance(transform.position, nextAction.target.transform.position);
                 float calcCost = dist / nextAction.currentMovementCost;
 
-                // approximately covered 2/3's or more of the distance already
+                // Approximately covered 2/3's or more of the distance already
                 if (calcCost < nextAction.cost / 3f)
                 {
                     nextAction.resetCount++;
@@ -186,42 +188,36 @@ public class GoalCreation : MonoBehaviour, IGoap
         ///////////////////////////////////////////////
         //// -- HANDLE RAY CAST/SIGHT DETECTION -- ////
         ///////////////////////////////////////////////
-        /// 
 
         // Draw 10 rays in a fan-like spread in front of the enemy. This construct represents it's sight.
+        // Numbering goes from -5 to 5 as the fan needs to be symmetrical to represent a realistic line of sight. The indexing of the array is compensated
+        // as seen below as 'i + 5';
         RaycastHit[] hits = new RaycastHit[10];
         
         for (int i = -5; i < 5; i++)
         {
+            Debug.DrawLine(transform.position, transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 5f, Color.red);
+            // Draw 10 raycasts from the enemy in a fan - like shape. Each ray will travel for 5 units in their respective directions and then
+            // record the first collision encountered in the "hit" output. It will not report collisions beyond the first (does not travel through entities, walls).
             if (Physics.Raycast(transform.position,
                     Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 5f, // Partial thanks to github co-pilot for coming up with a
                     out hits[i + 5],                                                                  // solution that allowed the ray to rotate properly w/o deforming!
                     5f))
             {
-             
-                // Leaving this in case for future reference. Non-functional and whatnot.
-                /*
-                var worldData = getWorldState();
-                var output =  from action in worldData 
-                    where worldData.Contains(new KeyValuePair<string,bool>("recentlyAttackedPlayer", false)) select action.Value;
-
-                // 
-                bool playerRecentlyAttacked = output.Any();
-                if (hits[i + 5].collider.gameObject.tag == "Player" && !playerRecentlyAttacked)
+                // If a ray cast hits the player and the enemy isn't in an active chase, begin the chase:
+                // - Chase variable is set to 0.1 (Prevents the condition from re-evaluating to true if ray hits every frame on chase start).
+                // - Set world fact "found player" to true to make the chase player goal to be chosen in the next planning session, as it has a high insistence value.
+                // - Forcefully exit the current action (henceforth plan) by making its cost too high to run and force it to be evaluated so it is aborted,
+                //   allowing a new plan (chasing the player plan) to be made.
+                if (hits[i + 5].collider.gameObject.tag == "Player" && GoapAgent.playerChaseTime == 0f)
                 {
-                    // Player is able to be attacked. Drop everything and attack!
-
-                    // Preemptively end current action and cancel it to force the plan to collapse, and be re-planned.
-                    nextAction.currentCostTooHigh = true;
-                    nextAction.setInRange(true);
-
-                    // todo: implement the world state "recently attack player", find a way to change this dyanmically to true/false after a time period.
-                    // todo: also implement another world state where the player is visible currently, such that it's the primary factor in insistence calculations.
-                
-
-                    return true;
+                    WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", true));
+                        GoapAgent.playerChaseTime = 0.1f;
+                        Debug.Log("SMART CORE ONLINE");
+                        nextAction.currentCostTooHigh = true;
+                        nextAction.setInRange(true);
+                        return true;
                 }
-                */
             }
         }
 
@@ -229,6 +225,28 @@ public class GoalCreation : MonoBehaviour, IGoap
         /////////////////////////////
         //// -- HANDLE TIMERS -- ////
         /////////////////////////////
+
+        // If the enemy is in a chase and the chase lasts for over 5 seconds...
+        // - Set world fact "found player" to false to prevent another chase player goal to be returned in the next planning session.
+        // - Reset chase timer to 0f.
+        // - Forcefully exit the current plan of chasing player (like above), to stop the chase.
+        // - New plan will be generated without the chase goal, making the enemy do something else.
+        if (GoapAgent.playerChaseTime > 5f)
+        {
+            WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", false));
+            GoapAgent.playerChaseTime = 0f;
+            Debug.Log("what the hell");
+            nextAction.currentCostTooHigh = true;
+            nextAction.setInRange(true);
+            return true;
+        }
+
+        // Increment the player chase timer by dt if the player is a target of an action (Only of which is the chase player action).
+        if (nextAction.target.tag == "Player")
+        {
+            GoapAgent.playerChaseTime += Time.deltaTime;
+            Debug.Log(GoapAgent.playerChaseTime);
+        }
 
         // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
         return false;
@@ -239,18 +257,20 @@ public class GoalCreation : MonoBehaviour, IGoap
 	// todo: do some fancy actual calculations (lookup utility ai) to properly determine goal insistence values.
     public (string, bool) DetermineGoal(HashSet<KeyValuePair<string, bool>> goalList)
     {
-
+        // Goals represented using an enum
         GOALS aGoal;
 
         // return values declared so the compiler doesn't go mental.
         string goal = "";
         bool goalFlag = false;
 
-        // Init some world data for use later. Wasteful but kept for readability currently.
-        bool touchingPlayer = WorldData.GetFactState("touchingPlayer", true);
+        // Retrieve all world data and their status. Done individually for readability.
+        bool touchingCube = WorldData.GetFactState("touchingCube", true);
         bool touchingGrass = WorldData.GetFactState("touchingGrass", true);
 
         bool isRed = WorldData.GetFactState("isRed", true);
+
+        bool playerFound = WorldData.GetFactState("foundPlayer", true);
 
         // List of goals and their associated insistence values.
         HashSet<KeyValuePair<string, int>> goalIValues = new HashSet<KeyValuePair<string, int>>();
@@ -264,22 +284,33 @@ public class GoalCreation : MonoBehaviour, IGoap
 
             // Set enum value to goal.
             aGoal = (GOALS)i;
+            
             // Init current goal's insistence value.
             int Insistence = 0;
 
             // For each specific goal, determine insistence value based on world state, then add results to the goalIValues list.
             switch (aGoal)
             {
-                case GOALS.TOUCHPLAYER:
-                    if (touchingGrass || !touchingPlayer) { Insistence += 1; }
+                // Find and touch the cube object.
+                case GOALS.TOUCHCUBE:
+                    if (touchingGrass || !touchingCube) { Insistence += 1; }
                     if (isRed) { Insistence += 1; }
                     //if (canSeePlayer) { Insistence += 100; } // Getting player is top priority.
                     goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
                     break;
 
+                // Find and touch the grass object.
                 case GOALS.TOUCHGRASS:
-                    if (touchingPlayer || !touchingGrass) { Insistence += 1; }
+                    if (touchingCube || !touchingGrass) { Insistence += 1; }
                     if (!isRed) { Insistence += 1; }
+                    goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
+                    break;
+
+                // Find and touch the player. Has negative insistence value by default, so will only be the chosen goal if the player found state is
+                // at true. Otherwise, other goals will always be chosen due to a higher starting insistence value of 0.
+                case GOALS.CHASEPLAYER:
+                    Insistence = -1;
+                    if(playerFound) { Insistence += 100; }
                     goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
                     break;
             }

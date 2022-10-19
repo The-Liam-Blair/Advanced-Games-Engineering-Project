@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Xml.Schema;
+using JetBrains.Annotations;
 using UnityEngine.AI;
 using Debug = UnityEngine.Debug;
 
@@ -25,7 +26,10 @@ public sealed class GoapAgent : MonoBehaviour {
 
 	private GoapPlanner planner;
 
+	// Reference to the world knowledge class
     public CurrentWorldKnowledge WorldData;
+
+    public static float playerChaseTime;
 
     void Start () {
 		stateMachine = new FSM ();
@@ -39,16 +43,19 @@ public sealed class GoapAgent : MonoBehaviour {
 		stateMachine.pushState (idleState);
 		loadActions ();
 
-		// Movement speed of the enemy.
+        // Movement speed of the enemy.
         GetComponent<NavMeshAgent>().speed = 8f;
 
 		// 'Pointer' to the world data class.
         WorldData = new CurrentWorldKnowledge();
+
+        playerChaseTime = 0f;
+
     }
 	
 
 	void Update () {
-		stateMachine.Update (this.gameObject);
+        stateMachine.Update (this.gameObject);
     }
 
 
@@ -107,7 +114,7 @@ public sealed class GoapAgent : MonoBehaviour {
 			// move the game object
 
 			GoapAction action = currentActions.Peek();
-			if (action.requiresInRange() && action.target == null) {
+            if (action.requiresInRange() && action.target == null) {
 				Debug.Log("<color=red>Fatal error:</color> Action requires a target but has none. Planning failed. You did not assign the target in your Action.checkProceduralPrecondition()");
 				fsm.popState(); // move
 				fsm.popState(); // perform
@@ -253,7 +260,7 @@ public sealed class GoapAgent : MonoBehaviour {
         public CurrentWorldKnowledge()
         {
             WorldData = new HashSet<KeyValuePair<string, bool>>();
-            WorldData.Add(new KeyValuePair<string, bool>("touchingPlayer", false));
+            WorldData.Add(new KeyValuePair<string, bool>("touchingCube", false));
         }
 
 		/// <summary>
@@ -311,7 +318,7 @@ public sealed class GoapAgent : MonoBehaviour {
         }
 
 		/// <summary>
-		/// Tries to find a fact within the knowledge base. If not found, create it in the 'false' state.
+		/// Locates the state of a given fact in the knowledge base. If the fact does not exist, it is created as a new, false fact.
 		/// </summary>
 		/// <param name="fact">Name of the fact.</param>
 		/// <param name="state">State of the fact.</param>

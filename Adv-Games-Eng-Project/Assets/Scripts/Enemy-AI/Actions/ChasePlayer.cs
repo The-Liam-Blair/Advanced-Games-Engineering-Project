@@ -1,21 +1,21 @@
 using System;
+using UnityEditor.SearchService;
 using UnityEngine;
 using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
 
-public class TouchGrass : GoapAction
+public class ChasePlayer : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
-    private bool movedThere;
+    private bool attackedPlayer;
 
     // Init preconditions and effects.
-    public TouchGrass()
+    public ChasePlayer()
     {
-        addPrecondition("touchingGrass", false);
-        addPrecondition("isRed", false);
-        addEffect("touchingGrass", true);
-        addEffect("touchingCube", false);
+        addPrecondition("foundPlayer", true);
+
+        addEffect("foundPlayer", false);
 
         actionEnabled = true;
     }
@@ -24,7 +24,7 @@ public class TouchGrass : GoapAction
     // Reset global variables.
     public override void reset()
     {
-        movedThere = false;
+        attackedPlayer = false;
         target = null;
         cost = 1f;
     }
@@ -32,7 +32,7 @@ public class TouchGrass : GoapAction
     // Check if the action has been completed.
     public override bool isDone()
     {
-        return movedThere;
+        return attackedPlayer;
     }
 
     // Determines if the action can be performed now from being in the correct location.
@@ -45,7 +45,7 @@ public class TouchGrass : GoapAction
     public override bool checkProceduralPrecondition(GameObject agent)
     {
         // Right now player position is always known, will be updated later to be predicted.
-        target = GameObject.Find("Grass");
+        target = GameObject.Find("Player");
 
         // Get cost from time to target (distance / speed) Speed is constant so acceleration isn't calculated.
         // Since path to target isn't created yet, one must be sampled (but not exactly instantiated) to test for distance.
@@ -53,7 +53,7 @@ public class TouchGrass : GoapAction
 
         // Calculate path sample, store inside path variable.
         NavMeshPath path = new NavMeshPath();
-        NavMesh.CalculatePath(agent.transform.position, target.transform.position, NavMesh.AllAreas, path);
+        NavMesh.CalculatePath(agent.transform.position, target.transform.position, 1, path);
 
         // If the path is valid...
         if (path.status == NavMeshPathStatus.PathComplete)
@@ -76,9 +76,11 @@ public class TouchGrass : GoapAction
     public override bool perform(GameObject agent)
     {
         // Action is forcefully run when it's running cost becomes too high. This checks if that condition has been triggered.
-        if (!base.perform(agent)) { return false; };
-        
-        movedThere = true;
+        if( !base.perform(agent)) { return false; };
+
+        Debug.Log("OW!");
+
+        attackedPlayer = true;
         UpdateWorldState();
 
         return true;
