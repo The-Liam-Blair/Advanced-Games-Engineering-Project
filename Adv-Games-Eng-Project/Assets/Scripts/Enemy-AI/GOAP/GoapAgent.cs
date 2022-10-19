@@ -39,8 +39,10 @@ public sealed class GoapAgent : MonoBehaviour {
 		stateMachine.pushState (idleState);
 		loadActions ();
 
+		// Movement speed of the enemy.
         GetComponent<NavMeshAgent>().speed = 8f;
 
+		// 'Pointer' to the world data class.
         WorldData = new CurrentWorldKnowledge();
     }
 	
@@ -308,6 +310,12 @@ public sealed class GoapAgent : MonoBehaviour {
             return false;
         }
 
+		/// <summary>
+		/// Tries to find a fact within the knowledge base. If not found, create it in the 'false' state.
+		/// </summary>
+		/// <param name="fact">Name of the fact.</param>
+		/// <param name="state">State of the fact.</param>
+		/// <returns>Fact state if the fact was found in the knowledge base, or false if the fact was not found and so was created in the 'false' state.</returns>
         public bool GetFactState(string fact, bool state)
         {
             foreach (var factString in WorldData)
