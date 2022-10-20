@@ -29,7 +29,11 @@ public sealed class GoapAgent : MonoBehaviour {
 	// Reference to the world knowledge class
     public CurrentWorldKnowledge WorldData;
 
+	// Records how long the enemy has chased the player in 1 action/goal. Forces the chase to stop after a set limit.
     public static float playerChaseTime;
+
+	// Cooldown prevents enemy from attacking the player while it is above 0f. Forces enemy to stop repeatedly chasing the player.
+    public static float playerChaseCooldown;
 
     void Start () {
 		stateMachine = new FSM ();
@@ -50,6 +54,7 @@ public sealed class GoapAgent : MonoBehaviour {
         WorldData = new CurrentWorldKnowledge();
 
         playerChaseTime = 0f;
+        playerChaseCooldown = 0f;
 
     }
 	
@@ -325,10 +330,10 @@ public sealed class GoapAgent : MonoBehaviour {
 		/// <returns>Fact state if the fact was found in the knowledge base, or false if the fact was not found and so was created in the 'false' state.</returns>
         public bool GetFactState(string fact, bool state)
         {
-            foreach (var factString in WorldData)
+            foreach (var factName in WorldData)
             {
-				// Fact string found in knowledge base: return it's state.
-				if(factString.Key == fact) { return WorldData.Contains(new KeyValuePair<string, bool>(fact, state)); }
+				// Fact name found in knowledge base: return it's state.
+				if(factName.Key == fact) { return WorldData.Contains(new KeyValuePair<string, bool>(fact, state)); }
             }
 
 			// Fact string not found in knowledge base: Create a new fact with it's state set to false.

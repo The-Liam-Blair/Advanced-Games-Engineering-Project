@@ -1,5 +1,4 @@
 using System;
-using UnityEditor.SearchService;
 using UnityEngine;
 using UnityEngine.AI;
 using Random = UnityEngine.Random;
@@ -79,6 +78,8 @@ public class ChasePlayer : GoapAction
         if( !base.perform(agent)) { return false; };
 
         Debug.Log("OW!");
+        GoapAgent.playerChaseTime = 0f;
+        GoapAgent.playerChaseCooldown = 5f;
 
         attackedPlayer = true;
         UpdateWorldState();

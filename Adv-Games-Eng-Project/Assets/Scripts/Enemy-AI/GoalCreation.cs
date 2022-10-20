@@ -155,7 +155,7 @@ public class GoalCreation : MonoBehaviour, IGoap
         nextAction.currentMovementCost += Time.deltaTime * 0.5f;
         
         // Check current movement cost to the expected action movement cost.
-        if (nextAction.currentMovementCost > nextAction.cost && GoapAgent.playerChaseTime < 0.1f)
+        if (nextAction.currentMovementCost > nextAction.cost && GoapAgent.playerChaseTime == 0f)
         {
             // Movement cost is just too high, abort the plan (Force the action function to run null and return false, causing the plan to collapse and be restarted).
             if (nextAction.currentMovementCost > nextAction.cost * 2)
@@ -202,17 +202,17 @@ public class GoalCreation : MonoBehaviour, IGoap
             if (Physics.Raycast(transform.position,
                     Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 5f, // Partial thanks to github co-pilot for coming up with a
                     out hits[i + 5],                                                                  // solution that allowed the ray to rotate properly w/o deforming!
-                    5f))
+                    10f))
             {
                 // If a ray cast hits the player and the enemy isn't in an active chase, begin the chase:
                 // - Chase variable is set to 0.1 (Prevents the condition from re-evaluating to true if ray hits every frame on chase start).
                 // - Set world fact "found player" to true to make the chase player goal to be chosen in the next planning session, as it has a high insistence value.
                 // - Forcefully exit the current action (henceforth plan) by making its cost too high to run and force it to be evaluated so it is aborted,
                 //   allowing a new plan (chasing the player plan) to be made.
-                if (hits[i + 5].collider.gameObject.tag == "Player" && GoapAgent.playerChaseTime == 0f)
+                if (hits[i + 5].collider.gameObject.tag == "Player" && GoapAgent.playerChaseTime == 0f && GoapAgent.playerChaseCooldown < 0f)
                 {
                     WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", true));
-                        GoapAgent.playerChaseTime = 0.1f;
+                        GoapAgent.playerChaseTime = 0.01f;
                         Debug.Log("SMART CORE ONLINE");
                         nextAction.currentCostTooHigh = true;
                         nextAction.setInRange(true);
@@ -231,11 +231,13 @@ public class GoalCreation : MonoBehaviour, IGoap
         // - Reset chase timer to 0f.
         // - Forcefully exit the current plan of chasing player (like above), to stop the chase.
         // - New plan will be generated without the chase goal, making the enemy do something else.
+        // - Even though the chase was a failure, the chase cooldown is still applied to prevent constant attacks from the enemy.
         if (GoapAgent.playerChaseTime > 5f)
         {
             WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", false));
             GoapAgent.playerChaseTime = 0f;
             Debug.Log("what the hell");
+            GoapAgent.playerChaseCooldown = 5f;
             nextAction.currentCostTooHigh = true;
             nextAction.setInRange(true);
             return true;
@@ -247,6 +249,8 @@ public class GoalCreation : MonoBehaviour, IGoap
             GoapAgent.playerChaseTime += Time.deltaTime;
             Debug.Log(GoapAgent.playerChaseTime);
         }
+
+        GoapAgent.playerChaseCooldown -= Time.deltaTime;
 
         // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
         return false;
