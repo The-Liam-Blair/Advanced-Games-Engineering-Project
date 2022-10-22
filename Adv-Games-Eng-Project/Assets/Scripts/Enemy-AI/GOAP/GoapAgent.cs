@@ -48,7 +48,7 @@ public sealed class GoapAgent : MonoBehaviour {
 		loadActions ();
 
         // Movement speed of the enemy.
-        GetComponent<NavMeshAgent>().speed = 8f;
+        GetComponent<NavMeshAgent>().speed = 13f;
 
 		// 'Pointer' to the world data class.
         WorldData = new CurrentWorldKnowledge();

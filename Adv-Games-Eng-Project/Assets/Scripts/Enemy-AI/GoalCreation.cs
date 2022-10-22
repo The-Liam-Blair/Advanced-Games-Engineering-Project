@@ -18,9 +18,10 @@ using static System.Collections.Specialized.BitVector32;
 
 public enum GOALS
 {
-    TOUCHCUBE,
-    TOUCHGRASS,
-    CHASEPLAYER
+    //TOUCHCUBE,
+    //TOUCHGRASS,
+    CHASEPLAYER,
+    PATROL
 };
 
 /**
@@ -59,9 +60,11 @@ public class GoalCreation : MonoBehaviour, IGoap
         // Pre-define every goal the enemy may select from, populate into list.
         HashSet<KeyValuePair<string, bool>> goalList = new HashSet<KeyValuePair<string, bool>>();
         
-        goalList.Add(new KeyValuePair<string, bool>("touchingCube", true));
-        goalList.Add(new KeyValuePair<string, bool>("touchingGrass", true));
+        //goalList.Add(new KeyValuePair<string, bool>("touchingCube", true));
+        //goalList.Add(new KeyValuePair<string, bool>("touchingGrass", true));
         goalList.Add(new KeyValuePair<string, bool>("foundPlayer", true));
+        goalList.Add(new KeyValuePair<string, bool>("isPatrolling", true));
+
 
         // Do some maf to calculate which goal should be chosen at this current moment.
         (string, bool) cheapestGoalData = DetermineGoal(goalList);
@@ -196,13 +199,13 @@ public class GoalCreation : MonoBehaviour, IGoap
         
         for (int i = -5; i < 5; i++)
         {
-            Debug.DrawLine(transform.position, transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 5f, Color.red);
+            Debug.DrawLine(transform.position, transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 8f, Color.red);
             // Draw 10 raycasts from the enemy in a fan - like shape. Each ray will travel for 5 units in their respective directions and then
             // record the first collision encountered in the "hit" output. It will not report collisions beyond the first (does not travel through entities, walls).
             if (Physics.Raycast(transform.position,
-                    Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 5f, // Partial thanks to github co-pilot for coming up with a
+                    Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 8f, // Partial thanks to github co-pilot for coming up with a
                     out hits[i + 5],                                                                  // solution that allowed the ray to rotate properly w/o deforming!
-                    10f))
+                    8f))
             {
                 // If a ray cast hits the player and the enemy isn't in an active chase, begin the chase:
                 // - Chase variable is set to 0.1 (Prevents the condition from re-evaluating to true if ray hits every frame on chase start).
@@ -276,6 +279,8 @@ public class GoalCreation : MonoBehaviour, IGoap
 
         bool playerFound = WorldData.GetFactState("foundPlayer", true);
 
+        bool isPatrolling = WorldData.GetFactState("isPatrolling", true);
+
         // List of goals and their associated insistence values.
         HashSet<KeyValuePair<string, int>> goalIValues = new HashSet<KeyValuePair<string, int>>();
 
@@ -295,6 +300,7 @@ public class GoalCreation : MonoBehaviour, IGoap
             // For each specific goal, determine insistence value based on world state, then add results to the goalIValues list.
             switch (aGoal)
             {
+                /*
                 // Find and touch the cube object.
                 case GOALS.TOUCHCUBE:
                     if (touchingGrass || !touchingCube) { Insistence += 1; }
@@ -309,12 +315,22 @@ public class GoalCreation : MonoBehaviour, IGoap
                     if (!isRed) { Insistence += 1; }
                     goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
                     break;
-
+                */
                 // Find and touch the player. Has negative insistence value by default, so will only be the chosen goal if the player found state is
                 // at true. Otherwise, other goals will always be chosen due to a higher starting insistence value of 0.
                 case GOALS.CHASEPLAYER:
                     Insistence = -1;
                     if(playerFound) { Insistence += 100; }
+                    goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
+                    break;
+
+                case GOALS.PATROL:
+                    int minInsistence  = Int32.MaxValue;
+                    foreach (var insistence in goalIValues)
+                    {
+                        if(insistence.Value < minInsistence) { minInsistence = insistence.Value; }
+                    }
+                    if (minInsistence <= 1) { Insistence = 100; }
                     goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
                     break;
             }

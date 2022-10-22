@@ -32,10 +32,25 @@ public class PlayerControl : MonoBehaviour
         // Apply movements floats to vector, add to rigid body as an impulse.
         rb.AddForce(new Vector3(horizontal, 0, vertical), ForceMode.Impulse);
 
-        // Clamp rb max velocity to half speed value to keep move speed consistent.
-        rb.velocity = new Vector3(
-            Mathf.Clamp(rb.velocity.x, -speed * 0.5f, speed * 0.5f),
-            0,
-            Mathf.Clamp(rb.velocity.z, -speed * 0.5f, speed * 0.5f));
+        // If player is moving diagonally...
+        if (Mathf.Abs(rb.velocity.x) > 0 && Mathf.Abs(rb.velocity.z) > 0)
+        {
+            // Apply a 95% velocity/top speed clamp (As diagonal speed is faster than horizontal/vertical).
+            // 95% diagonal clamped speed =~ 50% ordinal clamped speed approximately, so no speed is lost or gained by moving diagonally.
+            rb.velocity = new Vector3(
+                Mathf.Clamp(rb.velocity.x, -speed * 0.05f, speed * 0.05f),
+                0,
+                Mathf.Clamp(rb.velocity.z, -speed * 0.05f, speed * 0.05f));
+        }
+        
+        // Player is not moving diagonally, so is moving in an ordinal direction.
+        else
+        {
+            // Apply standard 50% velocity clamp.
+            rb.velocity = new Vector3(
+                Mathf.Clamp(rb.velocity.x, -speed * 0.5f, speed * 0.5f),
+                0,
+                Mathf.Clamp(rb.velocity.z, -speed * 0.5f, speed * 0.5f));
+        }
     }
 }
