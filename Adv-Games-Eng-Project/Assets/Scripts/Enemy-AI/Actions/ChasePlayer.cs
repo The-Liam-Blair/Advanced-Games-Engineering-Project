@@ -77,7 +77,6 @@ public class ChasePlayer : GoapAction
         // Action is forcefully run when it's running cost becomes too high. This checks if that condition has been triggered.
         if( !base.perform(agent)) { return false; };
 
-        Debug.Log("OW!");
         GoapAgent.playerChaseTime = 0f;
         GoapAgent.playerChaseCooldown = 5f;
 

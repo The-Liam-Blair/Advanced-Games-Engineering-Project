@@ -60,13 +60,13 @@ public class PatrolToPoint : GoapAction
         NavMeshPath path = new NavMeshPath();
 
         float randWalkDistance = 0f;
-        // For between 2 to 5 iterations...
-        for (int i = 0; i < Random.Range(2f, 5f); i++)
+        
+        for (int i = 0; i < 5; i++)
         {
-            // Increase the random walk distance by a random value between 4 and 8 (Real values, not just integer).
-            // Minimum walk distance: 2 iterations * 4 range = 8 units.
-            // Maximum walk distance: 5 iterations * 8 range = 40 units.
-            randWalkDistance += Random.Range(4f, 8f);
+            // Increase the random walk distance by a random value between 2 and 6 (Real values, not just integer).
+            // Minimum walk distance: 5 iterations * 2 range = 10 units.
+            // Maximum walk distance: 5 iterations * 6 range = 30 units.
+            randWalkDistance += Random.Range(2f, 6f);
         }
 
         // No. of tries to get a suitable path. Serves as an exit to the while loop if something goes wrong.

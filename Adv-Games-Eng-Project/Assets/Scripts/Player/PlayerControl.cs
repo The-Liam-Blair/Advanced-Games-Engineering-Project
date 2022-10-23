@@ -9,10 +9,12 @@ public class PlayerControl : MonoBehaviour
     [SerializeField] private int speed;
     
     private Rigidbody rb;
+    private PlayerInventory inventory;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
+        inventory = GetComponent<PlayerInventory>();
     }
     
     // Fixed update used for consistent physics movement.
@@ -42,7 +44,7 @@ public class PlayerControl : MonoBehaviour
                 0,
                 Mathf.Clamp(rb.velocity.z, -speed * 0.05f, speed * 0.05f));
         }
-        
+
         // Player is not moving diagonally, so is moving in an ordinal direction.
         else
         {
@@ -51,6 +53,28 @@ public class PlayerControl : MonoBehaviour
                 Mathf.Clamp(rb.velocity.x, -speed * 0.5f, speed * 0.5f),
                 0,
                 Mathf.Clamp(rb.velocity.z, -speed * 0.5f, speed * 0.5f));
+        }
+
+        if(horizontal != 0 || vertical != 0)
+        {
+            Quaternion tarRotation = Quaternion.LookRotation(rb.velocity);
+            
+            tarRotation = Quaternion.RotateTowards(
+                transform.rotation,
+                tarRotation,
+                720 * Time.deltaTime);
+            
+            rb.MoveRotation(tarRotation);
+        }
+
+
+        // If the use item key is pressed
+        if (Input.GetAxisRaw("Use") > 0)
+        {
+            if (inventory.IteminInventory != null)
+            {
+                inventory.UseItem();
+            }
         }
     }
 }

@@ -216,7 +216,6 @@ public class GoalCreation : MonoBehaviour, IGoap
                 {
                     WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", true));
                         GoapAgent.playerChaseTime = 0.01f;
-                        Debug.Log("SMART CORE ONLINE");
                         nextAction.currentCostTooHigh = true;
                         nextAction.setInRange(true);
                         return true;
@@ -239,7 +238,6 @@ public class GoalCreation : MonoBehaviour, IGoap
         {
             WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", false));
             GoapAgent.playerChaseTime = 0f;
-            Debug.Log("what the hell");
             GoapAgent.playerChaseCooldown = 5f;
             nextAction.currentCostTooHigh = true;
             nextAction.setInRange(true);
@@ -250,7 +248,6 @@ public class GoalCreation : MonoBehaviour, IGoap
         if (nextAction.target.tag == "Player")
         {
             GoapAgent.playerChaseTime += Time.deltaTime;
-            Debug.Log(GoapAgent.playerChaseTime);
         }
 
         GoapAgent.playerChaseCooldown -= Time.deltaTime;
