@@ -6,10 +6,21 @@ using UnityEngine;
 
 public class PlayerControl : MonoBehaviour
 {
-    [SerializeField] private int speed;
+    // Movement speed scalar.
+    private int speed;
     
+    // Rigidbody
     private Rigidbody rb;
+
+    // Reference to the player's inventory.
     private PlayerInventory inventory;
+
+    // Reads movement inputs.
+    float horizontal;
+    float vertical;
+
+    // Stores player displacements per frame, calculated from movement inputs.
+    Vector3 movement;
 
     private void Start()
     {
@@ -17,58 +28,44 @@ public class PlayerControl : MonoBehaviour
         inventory = GetComponent<PlayerInventory>();
     }
     
-    // Fixed update used for consistent physics movement.
-    // Rigidbody movement also used as it simplifies collision handling with terrain.
     private void FixedUpdate()
     {
-        // If x axis key is pressed: calculate movement vector. Otherwise, key not being pressed, so cancel out movement from rigidbody
-        // velocity (Stops skidding/forced movement).
-        float horizontal = (Input.GetAxisRaw("Horizontal") != 0)
-            ? Input.GetAxisRaw("Horizontal") * speed
-            : -rb.velocity.x;
+        // If the sprint key is held: Set speed to 14 (40% increase), otherwise set speed to 10.
+        speed = (Input.GetAxisRaw("Sprint") > 0)? 14 : 10;
+        
+        // Collect inputs received during this frame
+        horizontal = Input.GetAxisRaw("Horizontal");
+        vertical = Input.GetAxisRaw("Vertical");
 
-        float vertical = (Input.GetAxisRaw("Vertical") != 0)
-            ? Input.GetAxisRaw("Vertical") * speed
-            : -rb.velocity.z;
-
-        // Apply movements floats to vector, add to rigid body as an impulse.
-        rb.AddForce(new Vector3(horizontal, 0, vertical), ForceMode.Impulse);
-
-        // If player is moving diagonally...
-        if (Mathf.Abs(rb.velocity.x) > 0 && Mathf.Abs(rb.velocity.z) > 0)
+        // Using inputs, calculate player displacement vector, and apply to the player as movement.
+        movement = Vector3.zero;
+        if (horizontal != 0)
         {
-            // Apply a 95% velocity/top speed clamp (As diagonal speed is faster than horizontal/vertical).
-            // 95% diagonal clamped speed =~ 50% ordinal clamped speed approximately, so no speed is lost or gained by moving diagonally.
-            rb.velocity = new Vector3(
-                Mathf.Clamp(rb.velocity.x, -speed * 0.05f, speed * 0.05f),
-                0,
-                Mathf.Clamp(rb.velocity.z, -speed * 0.05f, speed * 0.05f));
+            movement.x += (horizontal > 0) ? speed : -speed;
+        }
+        if (vertical != 0)
+        {
+            movement.z += (vertical > 0) ? speed : -speed;
+        }
+        
+        // If player is moving diagonally (Both horizontal and vertical inputs being pressed) : Multiply vector by 30% to normalize speed (diagonal movement is faster
+        // than horizontal/vertical movement only). 30% value retrieved from pythagoras theorem.
+        if (movement.z != 0 && movement.x != 0)
+        {
+            movement *= 0.7f;
         }
 
-        // Player is not moving diagonally, so is moving in an ordinal direction.
-        else
+        // Rotate the player towards the movement vector if the player has moved.
+        if (movement != Vector3.zero)
         {
-            // Apply standard 50% velocity clamp.
-            rb.velocity = new Vector3(
-                Mathf.Clamp(rb.velocity.x, -speed * 0.5f, speed * 0.5f),
-                0,
-                Mathf.Clamp(rb.velocity.z, -speed * 0.5f, speed * 0.5f));
+            // Quartenion.Slerp in this instance applies the rotation (from current to new rotation) over time for a natural-looking rotation.
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(movement), 0.33f);
         }
 
-        if(horizontal != 0 || vertical != 0)
-        {
-            Quaternion tarRotation = Quaternion.LookRotation(rb.velocity);
-            
-            tarRotation = Quaternion.RotateTowards(
-                transform.rotation,
-                tarRotation,
-                720 * Time.deltaTime);
-            
-            rb.MoveRotation(tarRotation);
-        }
-
-
-        // If the use item key is pressed
+        rb.MovePosition(transform.position + movement * Time.deltaTime);
+        
+        
+        // If the use item key is pressed, attempt to use the held item (if it exists)
         if (Input.GetAxisRaw("Use") > 0)
         {
             if (inventory.IteminInventory != null)
