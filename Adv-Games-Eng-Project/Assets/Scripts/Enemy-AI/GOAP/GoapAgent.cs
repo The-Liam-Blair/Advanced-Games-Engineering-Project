@@ -48,7 +48,7 @@ public sealed class GoapAgent : MonoBehaviour {
 		loadActions ();
 
         // Movement speed of the enemy.
-        GetComponent<NavMeshAgent>().speed = 11f;
+        GetComponent<NavMeshAgent>().speed = 13f;
 
 		// 'Pointer' to the world data class.
         WorldData = new CurrentWorldKnowledge();
@@ -131,7 +131,25 @@ public sealed class GoapAgent : MonoBehaviour {
 			if ( dataProvider.moveAgent(action) ) {
 				fsm.popState();
 			}
-        };
+
+			/*MovableComponent movable = (MovableComponent) gameObj.GetComponent(typeof(MovableComponent));
+			if (movable == null) {
+				Debug.Log("<color=red>Fatal error:</color> Trying to move an Agent that doesn't have a MovableComponent. Please give it one.");
+				fsm.popState(); // move
+				fsm.popState(); // perform
+				fsm.pushState(idleState);
+				return;
+			}
+
+			float step = movable.moveSpeed * Time.deltaTime;
+			gameObj.transform.position = Vector3.MoveTowards(gameObj.transform.position, action.target.transform.position, step);
+
+			if (gameObj.transform.position.Equals(action.target.transform.position) ) {
+				// we are at the target location, we are done
+				action.setInRange(true);
+				fsm.popState();
+			}*/
+		};
 	}
 	
 	private void createPerformActionState() {
@@ -205,15 +223,6 @@ public sealed class GoapAgent : MonoBehaviour {
 		Debug.Log("Found actions: "+prettyPrint(actions));
 	}
 
-    /// <summary>
-	/// Starts the stun co-routine disabling enemy movement.
-	/// </summary>
-	/// <param name="duration">Length of the stun effect.</param>
-    public void Stun(int duration)
-    {
-        StartCoroutine(StunCoroutine(duration));
-    }
-
 	public static string prettyPrint(HashSet<KeyValuePair<string,bool>> state) {
 		String s = "";
 		foreach (KeyValuePair<string,bool> kvp in state) {
@@ -247,131 +256,111 @@ public sealed class GoapAgent : MonoBehaviour {
 		return s;
 	}
 
-    /// <summary>
-	/// Stun the enemy for a given duration. Stun in this instance for the enemy sets movement speed to 0, and so disables movement and rotation.
-	/// <br>(Basic implementation, the enemy <strong>--CAN--</strong> perform actions if it's current action's target reaches the enemy, but this should be rare).</br>
-	/// </summary>
-	/// <param name="duration">Length of the stun effect in seconds.</param>
-    IEnumerator StunCoroutine(int duration)
+	// Stores current world state and methods to freely modify it.
+    public class CurrentWorldKnowledge
     {
-        GetComponent<NavMeshAgent>().speed = 0;
-        yield return new WaitForSeconds(duration);
-        GetComponent<NavMeshAgent>().speed = 11;
+		// Stores world changes as a key value pair of a fact about the world and if it's true or false.
+        public HashSet<KeyValuePair<string, bool>> WorldData;
 
-        yield return null;
-    }
-
-}
-
-
-/// <summary>
-/// Stores current world state and methods to freely modify it.
-/// </summary>
-public class CurrentWorldKnowledge
-{
-    // Stores world changes as a key value pair of a fact about the world and if it's true or false.
-    public HashSet<KeyValuePair<string, bool>> WorldData;
-
-    public CurrentWorldKnowledge()
-    {
-        WorldData = new HashSet<KeyValuePair<string, bool>>();
-        WorldData.Add(new KeyValuePair<string, bool>("touchingCube", false));
-    }
-
-    /// <summary>
-    /// Add a fact to the knowledge list.
-    /// </summary>
-    /// <param name="data">New data fact to add.</param>
-    public void AddData(KeyValuePair<string, bool> data)
-    {
-        WorldData.Add(data);
-    }
-
-    /// <summary>
-    /// Remove a fact from the list
-    /// </summary>
-    /// <param name="removalData">The fact to remove from the knowledge list</param>
-    /// <returns>True: Successful erasure.<br></br> False: Erasure failure.</returns>
-    public bool RemoveData(KeyValuePair<string, bool> removalData)
-    {
-        return WorldData.Remove(removalData);
-    }
-
-    /// <summary>
-    /// World State getter
-    /// </summary>
-    /// <returns>Current world state.</returns>
-    public HashSet<KeyValuePair<string, bool>> GetWorldState()
-    {
-
-        return WorldData;
-    }
-
-    /// <summary>
-    /// Modifies a fact's state. If it does not exist, add it as a new fact (Returns false in this case to indicate a new fact is made, in case of spelling mistakes, etc).
-    /// </summary>
-    /// <param name="newData">The fact that will be modified.</param>
-    /// <returns>True: Successful fact modification <br></br> False: Fact was not found in the knowledge base and so a new fact is made.</returns>
-    public bool EditDataValue(KeyValuePair<string, bool> newData)
-    {
-        foreach (var data in WorldData)
+        public CurrentWorldKnowledge()
         {
-            if (newData.Key == data.Key)
+            WorldData = new HashSet<KeyValuePair<string, bool>>();
+            WorldData.Add(new KeyValuePair<string, bool>("touchingCube", false));
+        }
+
+		/// <summary>
+		/// Add a fact to the knowledge list.
+		/// </summary>
+		/// <param name="data">New data fact to add.</param>
+        public void AddData(KeyValuePair<string, bool> data)
+        {
+            WorldData.Add(data);
+        }
+
+		/// <summary>
+		/// Remove a fact from the list
+		/// </summary>
+		/// <param name="removalData">The fact to remove from the knowledge list</param>
+		/// <returns>True: Successful erasure.<br></br> False: Erasure failure.</returns>
+        public bool RemoveData(KeyValuePair<string, bool> removalData)
+        {
+			return WorldData.Remove(removalData);
+        }
+
+		/// <summary>
+		/// World State getter
+		/// </summary>
+		/// <returns>Current world state.</returns>
+        public HashSet<KeyValuePair<string, bool>> GetWorldState()
+        {
+
+            return WorldData;
+        }
+
+		/// <summary>
+		/// Modifies a fact's state. If it does not exist, add it as a new fact (Returns false in this case to indicate a new fact is made, in case of spelling mistakes, etc).
+		/// </summary>
+		/// <param name="newData">The fact that will be modified.</param>
+		/// <returns>True: Successful fact modification <br></br> False: Fact was not found in the knowledge base and so a new fact is made.</returns>
+        public bool EditDataValue(KeyValuePair<string, bool> newData)
+        {
+            foreach (var data in WorldData)
             {
-                if (RemoveData(data))
+                if (newData.Key == data.Key)
                 {
-                    WorldData.Add((newData));
-                    return true;
+                    if (RemoveData(data))
+                    {
+                        WorldData.Add((newData));
+                        return true;
+                    }
                 }
             }
+
+			// Called if the above code block doesn't find any existing data, so adds it as a new fact here.
+            WorldData.Add(newData);
+			// Returns false to indicate that the fact is new, not as an error/indication of a failed operation.
+            return false;
         }
 
-        // Called if the above code block doesn't find any existing data, so adds it as a new fact here.
-        WorldData.Add(newData);
-        // Returns false to indicate that the fact is new, not as an error/indication of a failed operation.
-        return false;
-    }
-
-    /// <summary>
-    /// Locates the state of a given fact in the knowledge base. If the fact does not exist, it is created as a new, false fact.
-    /// </summary>
-    /// <param name="fact">Name of the fact.</param>
-    /// <param name="state">State of the fact.</param>
-    /// <returns>Fact state if the fact was found in the knowledge base, or false if the fact was not found and so was created in the 'false' state.</returns>
-    public bool GetFactState(string fact, bool state)
-    {
-        foreach (var factName in WorldData)
+		/// <summary>
+		/// Locates the state of a given fact in the knowledge base. If the fact does not exist, it is created as a new, false fact.
+		/// </summary>
+		/// <param name="fact">Name of the fact.</param>
+		/// <param name="state">State of the fact.</param>
+		/// <returns>Fact state if the fact was found in the knowledge base, or false if the fact was not found and so was created in the 'false' state.</returns>
+        public bool GetFactState(string fact, bool state)
         {
-            // Fact name found in knowledge base: return it's state.
-            if (factName.Key == fact) { return WorldData.Contains(new KeyValuePair<string, bool>(fact, state)); }
+            foreach (var factName in WorldData)
+            {
+				// Fact name found in knowledge base: return it's state.
+				if(factName.Key == fact) { return WorldData.Contains(new KeyValuePair<string, bool>(fact, state)); }
+            }
+
+			// Fact string not found in knowledge base: Create a new fact with it's state set to false.
+            WorldData.Add(new KeyValuePair<string, bool>(fact, false));
+            return false;
         }
 
-        // Fact string not found in knowledge base: Create a new fact with it's state set to false.
-        WorldData.Add(new KeyValuePair<string, bool>(fact, false));
-        return false;
-    }
-
-    /// <summary>
-    /// Removes all facts from the knowledge base.
-    /// </summary>
-    public void ClearData()
-    {
-        WorldData.Clear();
-    }
-
-    /// <summary>
-	/// List of facts string output.
-	/// </summary>
-	/// <returns>Facts in an output-friendly format.</returns>
-    public override string ToString()
-    {
-        string output = "";
-
-        foreach (var data in WorldData)
+        /// <summary>
+		/// Removes all facts from the knowledge base.
+		/// </summary>
+        public void ClearData()
         {
-            output += data.ToString() + "\n";
+			WorldData.Clear();
         }
-        return output;
+
+		// List of facts string output.
+        public override string ToString()
+        {
+            string output = "";
+
+            foreach (var data in WorldData)
+            {
+                output += data.ToString() + "\n";
+            }
+            return output;
+        }
+
     }
 
 }

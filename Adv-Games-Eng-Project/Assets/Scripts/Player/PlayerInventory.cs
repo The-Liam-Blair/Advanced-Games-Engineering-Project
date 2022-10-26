@@ -31,7 +31,20 @@ public class PlayerInventory : MonoBehaviour
     {
         if (IteminInventory != null)
         {
-            GameObject.Find("_GAMEMANAGER").GetComponent<GameManager>().SpawnItem(gameObject, IteminInventory);
+            GameObject item = Instantiate(itemObject,
+                transform.position + transform.forward,
+               Quaternion.identity);
+
+            switch (IteminInventory.GetType())
+            {
+                //todo: implement stunnable throwables (Does not stun currently).
+                case "THROWABLE":
+                    item.GetComponent<Rigidbody>().AddForce(transform.forward * 15, ForceMode.Impulse);
+                    break;
+
+                case "PLACEABLE":
+                    break;
+            }
             IteminInventory = null;
         }
     }

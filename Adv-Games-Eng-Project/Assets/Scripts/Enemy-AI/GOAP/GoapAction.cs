@@ -37,7 +37,7 @@ public abstract class GoapAction : MonoBehaviour {
     protected int actionKnowledge;
     protected bool canCounterAction;
 
-    public CurrentWorldKnowledge WorldData;
+    public GoapAgent.CurrentWorldKnowledge WorldData;
 
     void Start()
     {

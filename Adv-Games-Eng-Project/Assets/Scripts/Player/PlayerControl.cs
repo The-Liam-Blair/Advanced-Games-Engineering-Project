@@ -30,8 +30,8 @@ public class PlayerControl : MonoBehaviour
     
     private void FixedUpdate()
     {
-        // If the sprint key is held: Set speed to 14 (55% increase), otherwise set speed to 9.
-        speed = (Input.GetAxisRaw("Sprint") > 0)? 14 : 9;
+        // If the sprint key is held: Set speed to 14 (40% increase), otherwise set speed to 10.
+        speed = (Input.GetAxisRaw("Sprint") > 0)? 14 : 10;
         
         // Collect inputs received during this frame
         horizontal = Input.GetAxisRaw("Horizontal");

@@ -2,52 +2,34 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
-using UnityEngine.AI;
 using static UnityEngine.UI.GridLayoutGroup;
 
 public class ItemObject : MonoBehaviour
 {
-    // Stores it's stats so it can access the debuff type and it's duration.
     private Item itemStats;
-    
-    // Prevents multiple collision runs from one instance of a collision.
-    private bool hasCollided = true;
 
-    // Called when an item is picked up by either the player or the enemy.
-    public void OnSpawn(Item stats)
+    private void Awake()
     {
-        itemStats = stats;
-        hasCollided = false;
+        itemStats = GameObject.Find("Player").GetComponent<PlayerInventory>().IteminInventory;
     }
 
     protected void OnCollisionEnter(Collision other)
     {
-        // Weird bug where this collision function is called multiple times from 1 collision (Despite the object being disabled after the first run of this function).
-        // Null item stats + 2nd col call = error. Bool collision check prevents this.
-        if (hasCollided) { return; }
-
-        hasCollided = true;
-        
         // Item hit/touched an object that isn't the owner, so apply the effect to it!
         if (!itemStats.owner.tag.Equals(other.gameObject.tag))
         {
             switch (itemStats.GetEffect())
             {
-                // Victim cannot move at all for \duration/ seconds.
+                // Victim cannot move at all for /duration\ seconds.
                 case "STUN":
-                    // Player
-                    if (other.gameObject.name == "Player") { /*other.gameObject.GetComponent<PlayerControl>().Stun(itemStats);*/ }
-                    
-                    // Enemy
-                    else  if(other.gameObject.name == "Enemy"){ other.gameObject.GetComponent<GoapAgent>().Stun(itemStats.duration); }
                     break;
 
                 // Victim's movement speed is reduced by 66% for \duration/ seconds.
                 case "SLOW":
                     break;
 
-                // (AI) enemy's vision is removed for \duration/ seconds.
-                // (Player) Player's vision is heavily darkened for \duration/ seconds.
+                // (If AI) enemy's vision is removed for \duration/ seconds.
+                // (If Player) Player's vision is heavily darkened for \duration/ seconds.
                 case "BLIND":
                     break;
             }
@@ -55,6 +37,6 @@ public class ItemObject : MonoBehaviour
             // Deactivate item as it's now been used up.
             itemStats.owner = null;
         }
-        gameObject.SetActive(false);
+        Destroy(this.gameObject);
     }
 }
