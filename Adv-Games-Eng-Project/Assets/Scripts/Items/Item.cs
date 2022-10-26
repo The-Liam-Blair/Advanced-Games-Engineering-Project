@@ -35,7 +35,11 @@ public class Item
     protected ItemEffect effect;
 
     // How long does the item de-buff the victim?
-    protected int duration;
+    public int duration
+    {
+        protected set;
+        get;
+    }
 
     // Who is holding this item (Prevents the user from hurting themselves with their own items).
     public GameObject owner

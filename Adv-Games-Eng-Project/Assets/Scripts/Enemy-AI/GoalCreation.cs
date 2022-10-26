@@ -18,8 +18,6 @@ using static System.Collections.Specialized.BitVector32;
 
 public enum GOALS
 {
-    //TOUCHCUBE,
-    //TOUCHGRASS,
     CHASEPLAYER,
     PATROL
 };
@@ -30,7 +28,7 @@ public enum GOALS
 public class GoalCreation : MonoBehaviour, IGoap
 {
 
-    public GoapAgent.CurrentWorldKnowledge WorldData;
+    public CurrentWorldKnowledge WorldData;
 
     void Start()
     {
