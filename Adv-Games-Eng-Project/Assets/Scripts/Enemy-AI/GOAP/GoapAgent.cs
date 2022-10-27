@@ -48,7 +48,7 @@ public sealed class GoapAgent : MonoBehaviour {
 		loadActions ();
 
         // Movement speed of the enemy.
-        GetComponent<NavMeshAgent>().speed = 11f;
+        GetComponent<NavMeshAgent>().speed = 1f;
 
 		// 'Pointer' to the world data class.
         WorldData = new CurrentWorldKnowledge();
@@ -277,6 +277,9 @@ public class CurrentWorldKnowledge
         WorldData = new HashSet<KeyValuePair<string, bool>>();
         WorldData.Add(new KeyValuePair<string, bool>("touchingCube", false));
         WorldData.Add(new KeyValuePair<string, bool>("aimingAtPlayer", false));
+        WorldData.Add(new KeyValuePair<string, bool>("foundPlayer", false));
+        WorldData.Add(new KeyValuePair<string, bool>("isPatrolling", false));
+        WorldData.Add(new KeyValuePair<string, bool>("hasItem", false));
     }
 
     /// <summary>

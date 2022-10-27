@@ -195,8 +195,17 @@ public class GoalCreation : MonoBehaviour, IGoap
 
         for (int i = -5; i < 5; i++)
         {
-            Debug.DrawLine(transform.position,
-                transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 8f, Color.red);
+            if (i >= -2 && i <= 2)
+            {
+                Debug.DrawLine(transform.position,
+                    transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 8f, Color.black);
+            }
+            else
+            {
+                Debug.DrawLine(transform.position,
+                    transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 8f,
+                    Color.red);
+            }
 
             // Draw 10 raycasts from the enemy in a fan - like shape. Each ray will travel for 5 units in their respective directions and then
             // record the first collision encountered in the "hit" output. It will not report collisions beyond the first (does not travel through entities, walls).

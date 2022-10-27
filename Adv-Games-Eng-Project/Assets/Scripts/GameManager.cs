@@ -101,7 +101,7 @@ public class GameManager : MonoBehaviour
     public void SpawnItem(GameObject attacker, Item stats)
     {
         // Teleport the object to the correct position (in-front of the user), activate it and init it the object using the item stats.
-        itemObjects[itemObjectsPoolPointer].transform.position = attacker.transform.position + attacker.transform.forward;
+        itemObjects[itemObjectsPoolPointer].transform.position = attacker.transform.position + (attacker.transform.forward * 1.5f);
         itemObjects[itemObjectsPoolPointer].SetActive(true);
         itemObjects[itemObjectsPoolPointer].GetComponent<ItemObject>().OnSpawn(stats);
         

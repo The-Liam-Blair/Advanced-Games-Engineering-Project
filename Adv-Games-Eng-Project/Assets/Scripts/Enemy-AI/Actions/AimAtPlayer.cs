@@ -48,10 +48,11 @@ public class AimAtPlayer : GoapAction
     // Checks if the action can be run
     public override bool checkProceduralPrecondition(GameObject agent)
     {
-        // Cost is the angle difference for rotating to aim at the player. Cost starts at 20, final cost needs to be 20 or lower to make it cheaper
-        // than just charging for the player (Can only use items standing still). So, the angle needed to turn to face the player needs to be 20 degrees or less.
-        //cost = Vector3.Angle(target.transform.position - agent.transform.position, agent.transform.forward);
-        cost = 0f;
+        // Get angle difference between current rotation and rotation needed to aim and look at the player.
+        // If the angle difference is < 20 degrees, then it's short enough that using a projectile item will be quick and useful.
+        // Otherwise, don't use projectile. (Rotation makes enemy stationary for balancing reasons).
+        float angleDiff = Vector3.Angle(agent.transform.forward, target.transform.position - agent.transform.position);
+        cost = (angleDiff < 20f) ? -angleDiff : 9999f;
         return true;
     }
 

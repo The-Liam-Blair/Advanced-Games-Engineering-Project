@@ -79,8 +79,10 @@ public class PlayerControl : MonoBehaviour
         // If the use item key is pressed, attempt to use the held item (if it exists)
         if (Input.GetAxisRaw("Use") > 0)
         {
+            Debug.Log("bruh?");
             if (inventory.IteminInventory != null)
             {
+                Debug.Log("BRUH");
                 inventory.UseItem();
             }
         }
@@ -97,10 +99,8 @@ public class PlayerControl : MonoBehaviour
     /// <param name="duration">Length of the stun in seconds.</param>
     IEnumerator StunCoroutine(int duration)
     {
-        Debug.Log("oof");
         isStunned = true;
         yield return new WaitForSeconds(duration);
-        Debug.Log("POG");
         isStunned = false;
 
         yield return null;
