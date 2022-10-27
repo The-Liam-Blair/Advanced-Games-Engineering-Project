@@ -36,7 +36,7 @@ public class ItemObject : MonoBehaviour
                 // Victim cannot move at all for \duration/ seconds.
                 case "STUN":
                     // Player
-                    if (other.gameObject.name == "Player") { /*other.gameObject.GetComponent<PlayerControl>().Stun(itemStats);*/ }
+                    if (other.gameObject.name == "Player") { other.gameObject.GetComponent<PlayerControl>().Stun(itemStats.duration); }
                     
                     // Enemy
                     else  if(other.gameObject.name == "Enemy"){ other.gameObject.GetComponent<GoapAgent>().Stun(itemStats.duration); }

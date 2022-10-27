@@ -57,9 +57,7 @@ public class GoalCreation : MonoBehaviour, IGoap
         
         // Pre-define every goal the enemy may select from, populate into list.
         HashSet<KeyValuePair<string, bool>> goalList = new HashSet<KeyValuePair<string, bool>>();
-        
-        //goalList.Add(new KeyValuePair<string, bool>("touchingCube", true));
-        //goalList.Add(new KeyValuePair<string, bool>("touchingGrass", true));
+
         goalList.Add(new KeyValuePair<string, bool>("foundPlayer", true));
         goalList.Add(new KeyValuePair<string, bool>("isPatrolling", true));
 
@@ -194,15 +192,18 @@ public class GoalCreation : MonoBehaviour, IGoap
         // Numbering goes from -5 to 5 as the fan needs to be symmetrical to represent a realistic line of sight. The indexing of the array is compensated
         // as seen below as 'i + 5';
         RaycastHit[] hits = new RaycastHit[10];
-        
+
         for (int i = -5; i < 5; i++)
         {
-            Debug.DrawLine(transform.position, transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 8f, Color.red);
+            Debug.DrawLine(transform.position,
+                transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 8f, Color.red);
+
             // Draw 10 raycasts from the enemy in a fan - like shape. Each ray will travel for 5 units in their respective directions and then
             // record the first collision encountered in the "hit" output. It will not report collisions beyond the first (does not travel through entities, walls).
             if (Physics.Raycast(transform.position,
-                    Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 8f, // Partial thanks to github co-pilot for coming up with a
-                    out hits[i + 5],                                                                  // solution that allowed the ray to rotate properly w/o deforming!
+                    Quaternion.AngleAxis(i * 10, transform.up) * transform.forward *
+                    8f, // Partial thanks to github co-pilot for coming up with a
+                    out hits[i + 5], // solution that allowed the ray to rotate properly w/o deforming!
                     8f))
             {
                 // If a ray cast hits the player and the enemy isn't in an active chase, begin the chase:
@@ -210,13 +211,21 @@ public class GoalCreation : MonoBehaviour, IGoap
                 // - Set world fact "found player" to true to make the chase player goal to be chosen in the next planning session, as it has a high insistence value.
                 // - Forcefully exit the current action (henceforth plan) by making its cost too high to run and force it to be evaluated so it is aborted,
                 //   allowing a new plan (chasing the player plan) to be made.
-                if (hits[i + 5].collider.gameObject.tag == "Player" && GoapAgent.playerChaseTime == 0f && GoapAgent.playerChaseCooldown < 0f)
+                if (hits[i + 5].collider.gameObject.tag == "Player" && GoapAgent.playerChaseTime == 0f &&
+                    GoapAgent.playerChaseCooldown < 0f)
                 {
                     WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", true));
-                        GoapAgent.playerChaseTime = 0.01f;
-                        nextAction.currentCostTooHigh = true;
-                        nextAction.setInRange(true);
-                        return true;
+                    GoapAgent.playerChaseTime = 0.01f;
+                    nextAction.currentCostTooHigh = true;
+                    nextAction.setInRange(true);
+                    return true;
+                }
+
+                else if (hits[i + 5].collider.gameObject.tag == "Item" &&
+                         GetComponent<Inventory>().IteminInventory == null)
+                {
+                    WorldData.EditDataValue(new KeyValuePair<string, bool>("hasItem", true));
+                    gameObject.GetComponent<NavMeshAgent>().destination = hits[i + 5].collider.gameObject.transform.position;
                 }
             }
         }
@@ -267,11 +276,6 @@ public class GoalCreation : MonoBehaviour, IGoap
         bool goalFlag = false;
 
         // Retrieve all world data and their status. Done individually for readability.
-        bool touchingCube = WorldData.GetFactState("touchingCube", true);
-        bool touchingGrass = WorldData.GetFactState("touchingGrass", true);
-
-        bool isRed = WorldData.GetFactState("isRed", true);
-
         bool playerFound = WorldData.GetFactState("foundPlayer", true);
 
         bool isPatrolling = WorldData.GetFactState("isPatrolling", true);
@@ -295,22 +299,6 @@ public class GoalCreation : MonoBehaviour, IGoap
             // For each specific goal, determine insistence value based on world state, then add results to the goalIValues list.
             switch (aGoal)
             {
-                /*
-                // Find and touch the cube object.
-                case GOALS.TOUCHCUBE:
-                    if (touchingGrass || !touchingCube) { Insistence += 1; }
-                    if (isRed) { Insistence += 1; }
-                    //if (canSeePlayer) { Insistence += 100; } // Getting player is top priority.
-                    goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
-                    break;
-
-                // Find and touch the grass object.
-                case GOALS.TOUCHGRASS:
-                    if (touchingCube || !touchingGrass) { Insistence += 1; }
-                    if (!isRed) { Insistence += 1; }
-                    goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
-                    break;
-                */
                 // Find and touch the player. Has negative insistence value by default, so will only be the chosen goal if the player found state is
                 // at true. Otherwise, other goals will always be chosen due to a higher starting insistence value of 0.
                 case GOALS.CHASEPLAYER:

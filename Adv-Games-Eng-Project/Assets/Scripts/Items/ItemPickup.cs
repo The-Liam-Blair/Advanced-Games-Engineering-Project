@@ -18,12 +18,16 @@ public class ItemPickup : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.tag == "Player")
+        if (other.gameObject.tag == "Player" || other.gameObject.tag == "Enemy")
         {
             Item item = new Item();
             item.SetItem(itemType, itemEffect, itemDuration, other.gameObject);
             item.owner = other.gameObject;
-            other.gameObject.GetComponent<PlayerInventory>().IteminInventory = item;
+            
+            // Player inventory is a different class as it can uniquely hold key pieces, unlike the standard inventory which the enemy uses.
+            if(other.gameObject.tag == "Player") {other.gameObject.GetComponent<PlayerInventory>().IteminInventory = item; }
+            else { other.gameObject.GetComponent<Inventory>().IteminInventory = item; }
+            
             GameObject.Find("_GAMEMANAGER").GetComponent<GameManager>().ItemPickedUp(int.Parse((name)));
         }
     }

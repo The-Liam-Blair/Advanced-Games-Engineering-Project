@@ -3,11 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class PlayerControl : MonoBehaviour
 {
     // Movement speed scalar.
     private int speed;
+
+    // Stunned bool, used to limit player's speed and movement.
+    private bool isStunned;
     
     // Rigidbody
     private Rigidbody rb;
@@ -24,12 +28,19 @@ public class PlayerControl : MonoBehaviour
 
     private void Start()
     {
+        isStunned = false;
         rb = GetComponent<Rigidbody>();
         inventory = GetComponent<PlayerInventory>();
     }
     
     private void FixedUpdate()
     {
+        // No movement possible when stunned, and cannot use items either.
+        if (isStunned)
+        {
+            return;
+        }
+
         // If the sprint key is held: Set speed to 14 (55% increase), otherwise set speed to 9.
         speed = (Input.GetAxisRaw("Sprint") > 0)? 14 : 9;
         
@@ -73,5 +84,25 @@ public class PlayerControl : MonoBehaviour
                 inventory.UseItem();
             }
         }
+    }
+
+    public void Stun(int duration)
+    {
+        StartCoroutine(StunCoroutine(duration));
+    }
+
+    /// <summary>
+    /// Stun the player for a given duration
+    /// </summary>
+    /// <param name="duration">Length of the stun in seconds.</param>
+    IEnumerator StunCoroutine(int duration)
+    {
+        Debug.Log("oof");
+        isStunned = true;
+        yield return new WaitForSeconds(duration);
+        Debug.Log("POG");
+        isStunned = false;
+
+        yield return null;
     }
 }

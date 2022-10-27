@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AI;
 using static UnityEditor.Progress;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
@@ -31,24 +32,24 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        // 10 item pickups can exist in the map at one time.
+        // 4 item pickups can exist in the map at one time.
         deactivatedCount = 0;
-        itemPickups.Capacity = 8;
+        itemPickups.Capacity = 4;
         for (int i = 0; i < itemPickups.Capacity; i++)
         {
             // why is there no resize methods for lists c#?!
-            itemPickups.Add(Instantiate(itemPrefabs[0], new Vector3(Random.Range(0, 10), 1, Random.Range(0, 10)), Quaternion.identity));
+            itemPickups.Add(Instantiate(itemPrefabs[0], GetValidPosition(), Quaternion.identity));
 
             // Init the items, adding the relevant components.
             itemPickups[i].transform.parent = GameObject.Find("ItemPickups").transform;
             itemPickups[i].SetActive(true);
             itemPickups[i].AddComponent<ItemPickup>();
-            itemPickups[i].GetComponent<ItemPickup>().InitItem("PROJECTILE", "STUN", 2); // <-- this'll be randomised later on.
+            itemPickups[i].GetComponent<ItemPickup>().InitItem("PROJECTILE", "STUN", 5); // <-- this'll be randomised later on.
             itemPickups[i].name = i.ToString();
         }
 
         // Init item objects; projectiles and traps. Only set active and used when an item is used.
-        itemObjects.Capacity = 8;
+        itemObjects.Capacity = 4;
         itemObjectsPoolPointer = 0;
         for (int i = 0; i < itemObjects.Capacity; i++)
         {
@@ -87,7 +88,7 @@ public class GameManager : MonoBehaviour
     // Re-spawn an item pickup by making it active again and teleporting it to a new position.
     private void GenerateNewItem(GameObject item)
     {
-        item.transform.position = new Vector3(Random.Range(0, 10), 1, Random.Range(0, 10));
+        item.transform.position = GetValidPosition();
         item.SetActive(true);
         deactivatedCount--;
     }
@@ -122,5 +123,22 @@ public class GameManager : MonoBehaviour
         itemObjectsPoolPointer++;
         if (itemObjectsPoolPointer > itemObjects.Count - 1) { itemObjectsPoolPointer = 0; }
 
+    }
+
+    Vector3 GetValidPosition()
+    {
+        int tries = 0;
+        Vector3 pos = Vector3.zero;
+        while (tries < 20)
+        {
+            tries++;
+            pos = new Vector3(Random.Range(0, 20), 1.1f, Random.Range(-20, 20));
+            if (Physics.OverlapSphere(pos, 1f).Length == 0)
+            {
+                return pos;
+            }
+
+        }
+        return pos;
     }
 }

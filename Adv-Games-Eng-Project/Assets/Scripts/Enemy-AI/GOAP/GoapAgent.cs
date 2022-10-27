@@ -200,7 +200,7 @@ public sealed class GoapAgent : MonoBehaviour {
 	{
 		GoapAction[] actions = gameObject.GetComponents<GoapAction>();
 		foreach (GoapAction a in actions) {
-			if(a.isActionEnabled()) { availableActions.Add(a); }
+            if (a.isActionEnabled()) { availableActions.Add(a); }
         }
 		Debug.Log("Found actions: "+prettyPrint(actions));
 	}
@@ -276,6 +276,7 @@ public class CurrentWorldKnowledge
     {
         WorldData = new HashSet<KeyValuePair<string, bool>>();
         WorldData.Add(new KeyValuePair<string, bool>("touchingCube", false));
+        WorldData.Add(new KeyValuePair<string, bool>("aimingAtPlayer", false));
     }
 
     /// <summary>
