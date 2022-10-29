@@ -24,7 +24,7 @@ public class Inventory : MonoBehaviour
     {
         if (IteminInventory != null)
         {
-            GameObject.Find("_GAMEMANAGER").GetComponent<GameManager>().SpawnItem(gameObject, IteminInventory);
+            GameObject.Find("_GAMEMANAGER").GetComponent<GameManager>().EntityUseItem(gameObject, IteminInventory);
             IteminInventory = null;
         }
     }

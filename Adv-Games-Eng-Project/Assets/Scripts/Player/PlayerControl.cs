@@ -8,7 +8,7 @@ using UnityEngine.AI;
 public class PlayerControl : MonoBehaviour
 {
     // Movement speed scalar.
-    private int speed;
+    private float speed;
 
     // Stunned bool, used to limit player's speed and movement.
     private bool isStunned;
@@ -25,12 +25,17 @@ public class PlayerControl : MonoBehaviour
 
     // Stores player displacements per frame, calculated from movement inputs.
     Vector3 movement;
+    
+    // Scales movement speed, used to slow the player.
+    private float speedMultiplier;
 
     private void Start()
     {
         isStunned = false;
         rb = GetComponent<Rigidbody>();
         inventory = GetComponent<PlayerInventory>();
+
+        speedMultiplier = 1f;
     }
     
     private void FixedUpdate()
@@ -42,7 +47,10 @@ public class PlayerControl : MonoBehaviour
         }
 
         // If the sprint key is held: Set speed to 14 (55% increase), otherwise set speed to 9.
-        speed = (Input.GetAxisRaw("Sprint") > 0)? 14 : 9;
+        speed = (Input.GetAxisRaw("Sprint") > 0) ? 14f : 9f;
+
+        // Scale speed with the scalar.
+        speed *= speedMultiplier;
         
         // Collect inputs received during this frame
         horizontal = Input.GetAxisRaw("Horizontal");
@@ -79,10 +87,8 @@ public class PlayerControl : MonoBehaviour
         // If the use item key is pressed, attempt to use the held item (if it exists)
         if (Input.GetAxisRaw("Use") > 0)
         {
-            Debug.Log("bruh?");
             if (inventory.IteminInventory != null)
             {
-                Debug.Log("BRUH");
                 inventory.UseItem();
             }
         }
@@ -91,6 +97,11 @@ public class PlayerControl : MonoBehaviour
     public void Stun(int duration)
     {
         StartCoroutine(StunCoroutine(duration));
+    }
+
+    public void Slow(int duration)
+    {
+        StartCoroutine(SlowCoroutine(duration));
     }
 
     /// <summary>
@@ -102,6 +113,15 @@ public class PlayerControl : MonoBehaviour
         isStunned = true;
         yield return new WaitForSeconds(duration);
         isStunned = false;
+
+        yield return null;
+    }
+
+    IEnumerator SlowCoroutine(int duration)
+    {
+        speedMultiplier = 0.33f; // Reduce multiplier by 2/3's for movement debuff.
+        yield return new WaitForSeconds(duration);
+        speedMultiplier = 1f; // Return multiplier back to 1 for normal speed.
 
         yield return null;
     }

@@ -48,7 +48,7 @@ public sealed class GoapAgent : MonoBehaviour {
 		loadActions ();
 
         // Movement speed of the enemy.
-        GetComponent<NavMeshAgent>().speed = 1f;
+        GetComponent<NavMeshAgent>().speed = 10f;
 
 		// 'Pointer' to the world data class.
         WorldData = new CurrentWorldKnowledge();
@@ -214,7 +214,16 @@ public sealed class GoapAgent : MonoBehaviour {
         StartCoroutine(StunCoroutine(duration));
     }
 
-	public static string prettyPrint(HashSet<KeyValuePair<string,bool>> state) {
+	/// <summary>
+	/// Starts the slow co-routine, slowing movement.
+	/// </summary>
+	/// <param name="duration">Slowness duration.</param>
+    public void Slow(int duration)
+    {
+		StartCoroutine(SlowCoroutine(duration));
+    }
+
+    public static string prettyPrint(HashSet<KeyValuePair<string,bool>> state) {
 		String s = "";
 		foreach (KeyValuePair<string,bool> kvp in state) {
 			s += kvp.Key + ":" + kvp.Value.ToString();
@@ -254,9 +263,19 @@ public sealed class GoapAgent : MonoBehaviour {
 	/// <param name="duration">Length of the stun effect in seconds.</param>
     IEnumerator StunCoroutine(int duration)
     {
-        GetComponent<NavMeshAgent>().speed = 0;
+        GetComponent<NavMeshAgent>().acceleration = 0; // Acceleration both stops enemy movement and does not interfere with a slow de-buff, which effects speed.
+        GetComponent<NavMeshAgent>().velocity = Vector3.zero; // Forcefully stops enemy movement.
         yield return new WaitForSeconds(duration);
-        GetComponent<NavMeshAgent>().speed = 11;
+        GetComponent<NavMeshAgent>().acceleration = 50;
+
+        yield return null;
+    }
+
+    IEnumerator SlowCoroutine(int duration)
+    {
+        GetComponent<NavMeshAgent>().speed *= 0.33f; // Apply speed debuff.
+        yield return new WaitForSeconds(duration);
+        GetComponent<NavMeshAgent>().speed /= 0.33f; // Inverse the debuff to get the normal speed again.
 
         yield return null;
     }

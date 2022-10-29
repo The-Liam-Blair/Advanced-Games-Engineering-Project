@@ -35,20 +35,21 @@ public class ItemObject : MonoBehaviour
             {
                 // Victim cannot move at all for \duration/ seconds.
                 case "STUN":
-                    // Player
                     if (other.gameObject.name == "Player") { other.gameObject.GetComponent<PlayerControl>().Stun(itemStats.duration); }
+                    else if(other.gameObject.name == "Enemy"){ other.gameObject.GetComponent<GoapAgent>().Stun(itemStats.duration); }
                     
-                    // Enemy
-                    else  if(other.gameObject.name == "Enemy"){ other.gameObject.GetComponent<GoapAgent>().Stun(itemStats.duration); }
                     break;
 
                 // Victim's movement speed is reduced by 66% for \duration/ seconds.
                 case "SLOW":
+                     if (other.gameObject.name == "Player") { other.gameObject.GetComponent<PlayerControl>().Slow(itemStats.duration); }
+                     else if (other.gameObject.name == "Enemy") { other.gameObject.GetComponent<GoapAgent>().Slow(itemStats.duration); }
+                    
                     break;
-
+ 
                 // (AI) enemy's vision is removed for \duration/ seconds.
                 // (Player) Player's vision is heavily darkened for \duration/ seconds.
-                case "BLIND":
+                case "BLIND": // todo
                     break;
             }
 
