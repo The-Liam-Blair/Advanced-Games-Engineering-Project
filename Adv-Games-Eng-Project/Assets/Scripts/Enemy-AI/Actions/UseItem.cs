@@ -21,7 +21,7 @@ public class UseItem : GoapAction
 
         actionEnabled = true;
     }
-
+ 
 
     // Reset global variables.
     public override void reset()

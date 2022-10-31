@@ -273,9 +273,9 @@ public sealed class GoapAgent : MonoBehaviour {
 
     IEnumerator SlowCoroutine(int duration)
     {
-        GetComponent<NavMeshAgent>().speed *= 0.33f; // Apply speed debuff.
+        GetComponent<NavMeshAgent>().speed = 3.33f; // Apply speed debuff.
         yield return new WaitForSeconds(duration);
-        GetComponent<NavMeshAgent>().speed /= 0.33f; // Inverse the debuff to get the normal speed again.
+        GetComponent<NavMeshAgent>().speed = 10f; // Inverse the debuff to get the normal speed again.
 
         yield return null;
     }

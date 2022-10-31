@@ -122,19 +122,34 @@ public class GameManager : MonoBehaviour
         itemObjects[itemObjectsPoolPointer].transform.position = attacker.transform.position + (attacker.transform.forward * 1.8f);
         itemObjects[itemObjectsPoolPointer].SetActive(true);
         itemObjects[itemObjectsPoolPointer].GetComponent<ItemObject>().OnSpawn(stats);
-        
+
+        itemObjects[itemObjectsPoolPointer].GetComponent<Renderer>().material.color = (stats.owner == GameObject.Find("Player")) ? Color.cyan : Color.red;
+
         // Get the type of the item to determine how it should function.
+        // For the item (depending on if it's thrown or placed):
+        // - Edit mesh to suit the item type.
+        // - Enable kinematic for placed objects so they don't move from physics or collisions.
+        // - Set the scale of the object (Traps are large, projectiles are smaller).
         switch (stats.GetType())
         {
             // Throwable: item object is a projectile that will be fired in-front of the user at great speed, intended to hit a target.
             case "THROWABLE":
+                itemObjects[itemObjectsPoolPointer].GetComponent<MeshFilter>().sharedMesh = itemObjectPrefabs[0].GetComponent<MeshFilter>().sharedMesh;
+                itemObjects[itemObjectsPoolPointer].GetComponent<Rigidbody>().isKinematic = false;
+                itemObjects[itemObjectsPoolPointer].transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
+
+                // Push projectile forward.
                 itemObjects[itemObjectsPoolPointer].GetComponent<Rigidbody>().AddForce(attacker.transform.forward * 25, ForceMode.Impulse);
                 break;
 
             // Placeable: item object is a non-moving object that persists on the ground. Once stepped on by a target, it will apply it's debuff to it.
             case "PLACEABLE":
-                itemObjects[itemObjectsPoolPointer].GetComponent<Rigidbody>()
-                    .AddForce(attacker.transform.forward * 25, ForceMode.Impulse); // todo: Not implemented yet, so just mimic the throwable for now.
+                itemObjects[itemObjectsPoolPointer].GetComponent<MeshFilter>().sharedMesh = itemObjectPrefabs[1].GetComponent<MeshFilter>().sharedMesh;
+                itemObjects[itemObjectsPoolPointer].GetComponent<Rigidbody>().isKinematic = true;
+                itemObjects[itemObjectsPoolPointer].transform.localScale = new Vector3(2, 0.8f, 2);
+                
+                // Trap is placed slightly further infront of the user than normal since it's much larger: Stops collisions with the user.
+                itemObjects[itemObjectsPoolPointer].transform.position = attacker.transform.position + (attacker.transform.forward * 2.5f);
                 break;
         }
         
