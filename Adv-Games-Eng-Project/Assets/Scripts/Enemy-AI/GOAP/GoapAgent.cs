@@ -35,6 +35,10 @@ public sealed class GoapAgent : MonoBehaviour {
 	// Cooldown prevents enemy from attacking the player while it is above 0f. Forces enemy to stop repeatedly chasing the player.
     public static float playerChaseCooldown;
 
+	// Value represents how aggressive the enemy should be. Higher aggressiveness = Enemy is given approximate player position with increasing accuracy as
+	// the value increases. Reduced significantly after executing a chase plan. Used to make the enemy forcefully encounter the player more often.
+    public static float aggressiveness;
+
     void Start () {
 		stateMachine = new FSM ();
 		availableActions = new HashSet<GoapAction> ();
@@ -55,6 +59,8 @@ public sealed class GoapAgent : MonoBehaviour {
 
         playerChaseTime = 0f;
         playerChaseCooldown = 0f;
+
+        aggressiveness = 0;
 
     }
 	

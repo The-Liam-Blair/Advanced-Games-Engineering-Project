@@ -6,6 +6,7 @@ using System.Numerics;
 using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UI;
 using static UnityEditor.Progress;
 using Debug = UnityEngine.Debug;
 using Quaternion = UnityEngine.Quaternion;
@@ -87,6 +88,9 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
+
+        // Update output with aggressiveness value.
+        GameObject.Find("Output").GetComponent<Text>().text = GoapAgent.aggressiveness.ToString();
     }
 
     // When an item is picked up, deactivate it so it can be re-spawned later on.
@@ -119,7 +123,7 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("TYPE: " + stats.GetType() + " EFFECT: " + stats.GetEffect() + " DURATION: " + stats.duration);
         // Teleport the object to the correct position (in-front of the user), activate it and init it the object using the item stats.
-        itemObjects[itemObjectsPoolPointer].transform.position = attacker.transform.position + (attacker.transform.forward * 1.8f);
+        itemObjects[itemObjectsPoolPointer].transform.position = attacker.transform.position + (attacker.transform.forward * 2f);
         itemObjects[itemObjectsPoolPointer].SetActive(true);
         itemObjects[itemObjectsPoolPointer].GetComponent<ItemObject>().OnSpawn(stats);
 
@@ -139,7 +143,7 @@ public class GameManager : MonoBehaviour
                 itemObjects[itemObjectsPoolPointer].transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
 
                 // Push projectile forward.
-                itemObjects[itemObjectsPoolPointer].GetComponent<Rigidbody>().AddForce(attacker.transform.forward * 25, ForceMode.Impulse);
+                itemObjects[itemObjectsPoolPointer].GetComponent<Rigidbody>().AddForce(attacker.transform.forward.normalized * 20, ForceMode.Impulse);
                 break;
 
             // Placeable: item object is a non-moving object that persists on the ground. Once stepped on by a target, it will apply it's debuff to it.

@@ -227,6 +227,8 @@ public class GoalCreation : MonoBehaviour, IGoap
                     GoapAgent.playerChaseTime = 0.01f;
                     nextAction.currentCostTooHigh = true;
                     nextAction.setInRange(true);
+                    
+                    if (GoapAgent.aggressiveness < 0) { GoapAgent.aggressiveness = 0; }
                     return true;
                 }
 
@@ -267,6 +269,19 @@ public class GoalCreation : MonoBehaviour, IGoap
         }
 
         GoapAgent.playerChaseCooldown -= Time.deltaTime;
+
+        // Increase aggressiveness if not chasing the player, decrease it at a more rapid scale while chasing the player.
+        // Range of aggressive is 0 <= aggressiveness <= 100
+        if (GoapAgent.playerChaseTime == 0f)
+        {
+            GoapAgent.aggressiveness += 4 * Time.deltaTime;
+            if (GoapAgent.aggressiveness >= 100f) { GoapAgent.aggressiveness = 100f; }
+        }
+        else
+        {
+            GoapAgent.aggressiveness -= 12 * Time.deltaTime;
+            if (GoapAgent.aggressiveness <= 0f) { GoapAgent.aggressiveness = 0f; }
+        }
 
         // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
         return false;

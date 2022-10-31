@@ -27,7 +27,7 @@ public class ItemPickup : MonoBehaviour
             // Player inventory is a different class as it can uniquely hold key pieces, unlike the standard inventory which the enemy uses.
             if(other.gameObject.tag == "Player") {other.gameObject.GetComponent<PlayerInventory>().IteminInventory = item; }
             else { other.gameObject.GetComponent<Inventory>().IteminInventory = item; }
-            
+
             GameObject.Find("_GAMEMANAGER").GetComponent<GameManager>().ItemPickedUp(int.Parse((name)));
         }
     }

@@ -59,32 +59,45 @@ public class PatrolToPoint : GoapAction
         // Calculate path sample, store inside path variable.
         NavMeshPath path = new NavMeshPath();
 
-        float randWalkDistance = 0f;
-        
-        for (int i = 0; i < 5; i++)
-        {
-            // Increase the random walk distance by a random value between 2 and 6 (Real values, not just integer).
-            // Minimum walk distance: 5 iterations * 2 range = 10 units.
-            // Maximum walk distance: 5 iterations * 6 range = 30 units.
-            randWalkDistance += Random.Range(2f, 6f);
-        }
+        Vector3 randWalkPoint = Vector3.zero;
+
+        // Retrieve aggressiveness value.
+        float aggressiveness = GoapAgent.aggressiveness;
 
         // No. of tries to get a suitable path. Serves as an exit to the while loop if something goes wrong.
         int tries = 0;
-        
+
         // Runs until a suitable path is found or run out of tries (Which should be in the first iteration due to how SamplePosition works, but good to be safe).
         while (tries < 20)
         {
             tries++;
-            
-            // Determine orientation by getting a random angle (from the enemy's view/perspective) in a 90 degree cone.
-            Vector3 orientation = Quaternion.AngleAxis(Random.Range(-45f, 45f), Vector3.forward) * agent.transform.forward;
-            
-            // Multiply the orientation by the distance multiplier to get the final way point location.
-            Vector3 randomPoint = orientation * randWalkDistance;
-            
+
+            // Init player's approximate position by getting the player's actual position.
+            Vector3 playerPos = GameObject.Find("Player").transform.position;
+
+            // Low aggressiveness: Player's position is not given in any way. Random movement.
+            if (aggressiveness <= 29)
+            {
+                randWalkPoint = new Vector3(Random.Range(-30f, 30f), 1, Random.Range(-30f, 30f));
+            }
+            else if (aggressiveness > 30 && aggressiveness <= 59)
+            {
+                // Medium aggressiveness: Player's position is supplied with 20 units of noise on the x and z axes.
+                randWalkPoint = playerPos + new Vector3(Random.Range(-20f, 20f), 1, Random.Range(-20f, 20f));
+            }
+            else if (aggressiveness > 60 && aggressiveness <= 89)
+            {
+                // High aggressiveness: Player's position is supplied with 10 units of noise on the x and z axes (More accurate than medium).
+                randWalkPoint = playerPos + new Vector3(Random.Range(-10f, 10f), 1, Random.Range(-10f, 10f));
+            }
+            else
+            {
+                // Extreme aggressiveness: Player's position is supplied with no noise (Most accurate).
+                randWalkPoint = playerPos;
+            }
+
             // Attempt to find a suitable point on the nav mesh that's closest to or at the randomPoint position.
-            if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, randWalkDistance, 1))
+            if (NavMesh.SamplePosition(randWalkPoint, out NavMeshHit hit, Vector3.Distance(agent.transform.position, randWalkPoint), 1))
             {
                 // Test if the enemy is able to reach the way point using nav mesh travel from it's current location.
                 // If the path is valid...
