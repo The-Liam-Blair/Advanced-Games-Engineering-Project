@@ -19,7 +19,7 @@ public class UseItem : GoapAction
         addEffect("hasItem", false);
         addEffect("aimingAtPlayer", false);
 
-        actionEnabled = true;
+        actionEnabled = false;
     }
  
 

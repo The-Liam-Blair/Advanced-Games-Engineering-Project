@@ -216,27 +216,27 @@ public class GoalCreation : MonoBehaviour, IGoap
                     8f))
             {
                 // If a ray cast hits the player and the enemy isn't in an active chase, begin the chase:
-                // - Chase variable is set to 0.1 (Prevents the condition from re-evaluating to true if ray hits every frame on chase start).
-                // - Set world fact "found player" to true to make the chase player goal to be chosen in the next planning session, as it has a high insistence value.
-                // - Forcefully exit the current action (henceforth plan) by making its cost too high to run and force it to be evaluated so it is aborted,
-                //   allowing a new plan (chasing the player plan) to be made.
                 if (hits[i + 5].collider.gameObject.tag == "Player" && GoapAgent.playerChaseTime == 0f &&
                     GoapAgent.playerChaseCooldown < 0f)
                 {
-                    WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", true));
+                    WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", true)); // Update world knowledge to reflect that the player has been found.
+
                     GoapAgent.playerChaseTime = 0.01f;
-                    nextAction.currentCostTooHigh = true;
-                    nextAction.setInRange(true);
+
+                    nextAction.currentCostTooHigh = true; // Forcefully end the current action
+                    nextAction.setInRange(true);          // Which will abort the plan and make chase player the new goal.
                     
-                    if (GoapAgent.aggressiveness < 0) { GoapAgent.aggressiveness = 0; }
+                    GoapAgent.aggressiveness -= 75f;      // Massively drop aggressiveness value as a result of attacking the player.
+                    if (GoapAgent.aggressiveness < 0) { GoapAgent.aggressiveness = 0; } // And don't let it reach a negative value.
                     return true;
                 }
 
+                // Enemy sees an item and doesn't own an item and has learned about using items...
                 else if (hits[i + 5].collider.gameObject.tag == "Item" &&
-                         GetComponent<Inventory>().IteminInventory == null)
+                         GetComponent<Inventory>().IteminInventory == null && GetComponent<UseItem>().isActionEnabled())
                 {
-                    WorldData.EditDataValue(new KeyValuePair<string, bool>("hasItem", true));
-                    gameObject.GetComponent<NavMeshAgent>().destination = hits[i + 5].collider.gameObject.transform.position;
+                    WorldData.EditDataValue(new KeyValuePair<string, bool>("hasItem", true)); // Item obtained! Update world knowledge to reflect this.
+                    gameObject.GetComponent<NavMeshAgent>().destination = hits[i + 5].collider.gameObject.transform.position; // Go to the item position to grab it.
                 }
             }
         }
@@ -247,27 +247,23 @@ public class GoalCreation : MonoBehaviour, IGoap
         /////////////////////////////
 
         // If the enemy is in a chase and the chase lasts for over 5 seconds...
-        // - Set world fact "found player" to false to prevent another chase player goal to be returned in the next planning session.
-        // - Reset chase timer to 0f.
-        // - Forcefully exit the current plan of chasing player (like above), to stop the chase.
-        // - New plan will be generated without the chase goal, making the enemy do something else.
-        // - Even though the chase was a failure, the chase cooldown is still applied to prevent constant attacks from the enemy.
         if (GoapAgent.playerChaseTime > 5f)
         {
-            WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", false));
-            GoapAgent.playerChaseTime = 0f;
-            GoapAgent.playerChaseCooldown = 5f;
-            nextAction.currentCostTooHigh = true;
+            WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", false)); // Set found player to false, stopping another chase player goal.
+            
+            GoapAgent.playerChaseTime = 0f; // Reset chase timer.
+            GoapAgent.playerChaseCooldown = 5f; // Add a 5 second cooldown before the enemy can initiate another chase.
+
+            nextAction.currentCostTooHigh = true; // Abort the chase plan, re-plan with a different goal.
             nextAction.setInRange(true);
             return true;
         }
 
-        // Increment the player chase timer by dt if the player is a target of an action (Only of which is the chase player action).
-        if (nextAction.target.tag == "Player")
+        // If the player has been found by the enemy...
+        if (WorldData.GetFactState("foundPlayer", true ))
         {
-            GoapAgent.playerChaseTime += Time.deltaTime;
+            GoapAgent.playerChaseTime += Time.deltaTime; // The enemy is chasing the player! Increase chase timer by dt.
         }
-
         GoapAgent.playerChaseCooldown -= Time.deltaTime;
 
         // Increase aggressiveness if not chasing the player, decrease it at a more rapid scale while chasing the player.
@@ -276,11 +272,6 @@ public class GoalCreation : MonoBehaviour, IGoap
         {
             GoapAgent.aggressiveness += 4 * Time.deltaTime;
             if (GoapAgent.aggressiveness >= 100f) { GoapAgent.aggressiveness = 100f; }
-        }
-        else
-        {
-            GoapAgent.aggressiveness -= 12 * Time.deltaTime;
-            if (GoapAgent.aggressiveness <= 0f) { GoapAgent.aggressiveness = 0f; }
         }
 
         // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
@@ -299,7 +290,7 @@ public class GoalCreation : MonoBehaviour, IGoap
         string goal = "";
         bool goalFlag = false;
 
-        // Retrieve all world data and their status. Done individually for readability.
+        // Retrieve world data and their status. Done individually for readability.
         bool playerFound = WorldData.GetFactState("foundPlayer", true);
 
         bool isPatrolling = WorldData.GetFactState("isPatrolling", true);

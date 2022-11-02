@@ -22,7 +22,7 @@ public class ItemObject : MonoBehaviour
 
     protected void OnCollisionEnter(Collision other)
     {
-        // Weird bug where this collision function is called multiple times from 1 collision (Despite the object being disabled after the first run of this function).
+        // Glitch where this collision function is called multiple times from 1 collision (Despite the object being disabled after the first run of this function).
         // Null item stats + 2nd col call = error. Bool collision check prevents this.
         if (hasCollided) { return; }
 
@@ -51,6 +51,11 @@ public class ItemObject : MonoBehaviour
                 // (Player) Player's vision is heavily darkened for \duration/ seconds.
                 case "BLIND": // todo
                     break;
+            }
+
+            if (other.gameObject.tag == "Enemy")
+            {
+                other.gameObject.GetComponent<UseItem>().IncreaseKnowledge(100);
             }
 
             // Deactivate item as it's now been used up.

@@ -188,7 +188,7 @@ public abstract class GoapAction : MonoBehaviour {
     {
         actionKnowledge += knowledge;
 
-        if (knowledge >= 100) { enabled = true; }
+        if (knowledge >= 100) { actionEnabled = true; GetComponent<GoapAgent>().addAction(this); }
         if (knowledge >= 200) { canCounterAction = true; }
     }
 }
