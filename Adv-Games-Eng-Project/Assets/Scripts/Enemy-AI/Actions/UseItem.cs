@@ -12,14 +12,13 @@ public class UseItem : GoapAction
     // Init preconditions and effects.
     public UseItem()
     {
-        addPrecondition("foundPlayer", true);
         addPrecondition("hasItem", true);
         addPrecondition("aimingAtPlayer", true);
 
         addEffect("hasItem", false);
         addEffect("aimingAtPlayer", false);
 
-        actionEnabled = false;
+        actionEnabled = false; // Action enabling may still need worked on
     }
  
 
@@ -27,7 +26,7 @@ public class UseItem : GoapAction
     public override void reset()
     {
         usedItem = false;
-        cost = 0f;
+        cost =-1f;
         target = GameObject.Find("Player");
     }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using Random = UnityEngine.Random;
@@ -13,8 +14,10 @@ public class ChasePlayer : GoapAction
     public ChasePlayer()
     {
         addPrecondition("foundPlayer", true);
+        addPrecondition("attackPlayer", false);
 
         addEffect("foundPlayer", false);
+        addEffect("attackPlayer", true);
 
         actionEnabled = true;
     }
@@ -83,6 +86,7 @@ public class ChasePlayer : GoapAction
         attackedPlayer = true;
         UpdateWorldState();
 
+        WorldData.EditDataValue(new KeyValuePair<string, bool>("attackPlayer", false));
 
         return true;
     }

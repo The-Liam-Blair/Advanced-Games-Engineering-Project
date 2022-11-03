@@ -15,13 +15,6 @@ using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 using static System.Collections.Specialized.BitVector32;
 
-
-public enum GOALS
-{
-    CHASEPLAYER,
-    PATROL
-};
-
 /**
  * Handles the creation and selection of goals before planning. Also handles agent movement.
  */
@@ -52,22 +45,7 @@ public class GoalCreation : MonoBehaviour, IGoap
 	 */
     public HashSet<KeyValuePair<string, bool>> createGoalState()
     {
-        // Holds a singular goal (Can hold multiple but node expansion will try to satisfy every goal condition at once, cannot natively handle multiple goals).
-        HashSet<KeyValuePair<string, bool>> goal = new HashSet<KeyValuePair<string, bool>>();
-        
-        // Pre-define every goal the enemy may select from, populate into list.
-        HashSet<KeyValuePair<string, bool>> goalList = new HashSet<KeyValuePair<string, bool>>();
-
-        goalList.Add(new KeyValuePair<string, bool>("foundPlayer", true));
-        goalList.Add(new KeyValuePair<string, bool>("isPatrolling", true));
-
-
-        // Do some maf to calculate which goal should be chosen at this current moment.
-        (string, bool) cheapestGoalData = DetermineGoal(goalList);
-        
-        // Return the chosen goal to the planner.
-        goal.Add(new KeyValuePair<string, bool>(cheapestGoalData.Item1, cheapestGoalData.Item2));
-        return goal;
+        return WorldData.DetermineNewGoal();
     }
 
 	/**
@@ -82,7 +60,7 @@ public class GoalCreation : MonoBehaviour, IGoap
 	{}
 
 	/**
-	 * Called every time a plan has been completed fully, including a relevant action set generated that results in the completion of a goal.
+	 * Called every time a plan has been planned fully, including a relevant action set generated that results in the completion of a goal.
 	 */
 	public void planFound (HashSet<KeyValuePair<string, bool>> goal, Queue<GoapAction> actions)
 	{
@@ -99,10 +77,8 @@ public class GoalCreation : MonoBehaviour, IGoap
 	}
     
 	/**
-	 * Called when the agent decides to cancel a plan. Currently unimplemented, but would likely destroy the current plan, update world state and
-	 * go through the planning process again.
-	 *
-	 * Likely will be called when an action seems to be unachievable within a reasonable time-frame, such as chasing a player.
+	 * Called when an agent cancels a plan. Plan cancellation is already handled in the movement state, so no implementation is required
+	 * For this function, other than for debugging purposes.
 	 */
 	public void planAborted (GoapAction aborter)
 	{
@@ -115,18 +91,26 @@ public class GoalCreation : MonoBehaviour, IGoap
     /**
      * Called once per frame while the enemy agent is in the 'MoveTo' state.
      * Contains most dynamic game logic, such as dynamic movement cost checking and detecting objects.
-     *
-     *
-     * Minor problem with nav mesh path-finding: when the agent approaches a narrow mesh strip, it will intrinsically slow down as it thinks it's about to
-     * walk off the walkable nav mesh area. Extremely noticeable on tight walkways and sharp corners.
-     * Solution: (Derived from https://forum.unity.com/threads/obstacle-avoidance-causing-agents-to-slow-down-on-corners.1074550/):
-     *  - Set agent path obstacle quality to none (Will not look ahead for obstacles, so does not slow down in the above instances.
-     *  - However: Unable to detect dynamic obstacles (E.g., incoming player projectiles).
-     *  - But: Utilize ray-casting to detect any specific obstacles, like player projectiles. If one is detected, TEMPORARILY set the obstacle quality to high
-     *    to dodge it, then set it back to none afterwards.
+     * False return = Agent has not arrived at the action's location yet.
+     * True  return = Agent no longer needs to move to the action location. Either indicates that it has reached the action location or the
+     *                action has been aborted. Essentially ends the loop in this movement state.
      */
     public bool moveAgent(GoapAction nextAction) 
     {
+        /////////////////////////////////
+        // -- CHECK GOAL INSISTENCE -- //
+        /////////////////////////////////
+
+        var currentGoal = WorldData.GetCurrentGoal(); // Fetch current goal.
+        // If the current goal has changed (Which means a new goal has been selected)...
+        if (currentGoal.Item1 != WorldData.DetermineNewGoal().ElementAt(0).Key)
+        {
+            // Abort current action + goal, go back to planning so a new plan can be created using the new goal.
+            nextAction.currentCostTooHigh = true;
+            nextAction.setInRange(true);
+            return true;
+        }
+
         
         /////////////////////////////////
         //// -- UPDATE AGENT PATH -- ////
@@ -143,7 +127,7 @@ public class GoalCreation : MonoBehaviour, IGoap
 
         // Perform a distance check between enemy agent and action's associated location. If this evaluates to true, destroy the nav mesh path
         // and return true (agent is at action location). Otherwise, return false (agent needs to keep moving).
-        if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 2f)
+        if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 1f)
         {
             nextAction.setInRange(true);
             nextAction.gameObject.GetComponent<NavMeshAgent>().ResetPath();
@@ -197,13 +181,15 @@ public class GoalCreation : MonoBehaviour, IGoap
         {
             if (i >= -2 && i <= 2)
             {
+                // Inner sight: Can fire projectiles at the player at this viewing angle.
                 Debug.DrawLine(transform.position,
-                    transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 8f, Color.black);
+                    transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 12f, Color.black);
             }
             else
             {
+                // Outer sight: Needs to rotate first before it can accurately fire a projectile.
                 Debug.DrawLine(transform.position,
-                    transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 8f,
+                    transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 12f,
                     Color.red);
             }
 
@@ -211,24 +197,21 @@ public class GoalCreation : MonoBehaviour, IGoap
             // record the first collision encountered in the "hit" output. It will not report collisions beyond the first (does not travel through entities, walls).
             if (Physics.Raycast(transform.position,
                     Quaternion.AngleAxis(i * 10, transform.up) * transform.forward *
-                    8f, // Partial thanks to github co-pilot for coming up with a
-                    out hits[i + 5], // solution that allowed the ray to rotate properly w/o deforming!
+                    12f,
+                    out hits[i + 5],
                     8f))
             {
                 // If a ray cast hits the player and the enemy isn't in an active chase, begin the chase:
                 if (hits[i + 5].collider.gameObject.tag == "Player" && GoapAgent.playerChaseTime == 0f &&
                     GoapAgent.playerChaseCooldown < 0f)
                 {
-                    WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", true)); // Update world knowledge to reflect that the player has been found.
-
+                    // Update world knowledge to reflect that the player has been found.
+                    WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", true));
                     GoapAgent.playerChaseTime = 0.01f;
 
-                    nextAction.currentCostTooHigh = true; // Forcefully end the current action
-                    nextAction.setInRange(true);          // Which will abort the plan and make chase player the new goal.
-                    
-                    GoapAgent.aggressiveness -= 75f;      // Massively drop aggressiveness value as a result of attacking the player.
+                    // Massively reduce aggressiveness value as a result of attacking the player.
+                    GoapAgent.aggressiveness -= 75f;      
                     if (GoapAgent.aggressiveness < 0) { GoapAgent.aggressiveness = 0; } // And don't let it reach a negative value.
-                    return true;
                 }
 
                 // Enemy sees an item and doesn't own an item and has learned about using items...
@@ -243,20 +226,17 @@ public class GoalCreation : MonoBehaviour, IGoap
 
 
         /////////////////////////////
-        //// -- HANDLE TIMERS -- ////
+        //// -- UPDATE TIMERS -- ////
         /////////////////////////////
 
         // If the enemy is in a chase and the chase lasts for over 5 seconds...
         if (GoapAgent.playerChaseTime > 5f)
         {
             WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", false)); // Set found player to false, stopping another chase player goal.
-            
+            WorldData.EditDataValue(new KeyValuePair<string, bool>("attackPlayer", false));
+
             GoapAgent.playerChaseTime = 0f; // Reset chase timer.
             GoapAgent.playerChaseCooldown = 5f; // Add a 5 second cooldown before the enemy can initiate another chase.
-
-            nextAction.currentCostTooHigh = true; // Abort the chase plan, re-plan with a different goal.
-            nextAction.setInRange(true);
-            return true;
         }
 
         // If the player has been found by the enemy...
@@ -268,88 +248,10 @@ public class GoalCreation : MonoBehaviour, IGoap
 
         // Increase aggressiveness if not chasing the player, decrease it at a more rapid scale while chasing the player.
         // Range of aggressive is 0 <= aggressiveness <= 100
-        if (GoapAgent.playerChaseTime == 0f)
-        {
-            GoapAgent.aggressiveness += 4 * Time.deltaTime;
-            if (GoapAgent.aggressiveness >= 100f) { GoapAgent.aggressiveness = 100f; }
-        }
+        GoapAgent.aggressiveness += 4 * Time.deltaTime;
+        if (GoapAgent.aggressiveness >= 100f) { GoapAgent.aggressiveness = 100f; }
 
-        // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
+            // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
         return false;
 	}
-    
-    // Black magic 2 returned variables!
-	// Determines what goal to choose. Currently very inefficient, kept however for readability and will be properly updated later on.
-	// todo: do some fancy actual calculations (lookup utility ai) to properly determine goal insistence values.
-    public (string, bool) DetermineGoal(HashSet<KeyValuePair<string, bool>> goalList)
-    {
-        // Goals represented using an enum
-        GOALS aGoal;
-
-        // return values declared so the compiler doesn't go mental.
-        string goal = "";
-        bool goalFlag = false;
-
-        // Retrieve world data and their status. Done individually for readability.
-        bool playerFound = WorldData.GetFactState("foundPlayer", true);
-
-        bool isPatrolling = WorldData.GetFactState("isPatrolling", true);
-
-        // List of goals and their associated insistence values.
-        HashSet<KeyValuePair<string, int>> goalIValues = new HashSet<KeyValuePair<string, int>>();
-
-        // For each goal...
-        for (int i = 0; i < goalList.Count; i++)
-        {
-
-            // Find goal by it's name.
-            string currentGoal = goalList.ElementAt(i).Key;
-
-            // Set enum value to goal.
-            aGoal = (GOALS)i;
-            
-            // Init current goal's insistence value.
-            int Insistence = 0;
-
-            // For each specific goal, determine insistence value based on world state, then add results to the goalIValues list.
-            switch (aGoal)
-            {
-                // Find and touch the player. Has negative insistence value by default, so will only be the chosen goal if the player found state is
-                // at true. Otherwise, other goals will always be chosen due to a higher starting insistence value of 0.
-                case GOALS.CHASEPLAYER:
-                    Insistence = -1;
-                    if(playerFound) { Insistence += 100; }
-                    goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
-                    break;
-
-                case GOALS.PATROL:
-                    int minInsistence  = Int32.MaxValue;
-                    foreach (var insistence in goalIValues)
-                    {
-                        if(insistence.Value < minInsistence) { minInsistence = insistence.Value; }
-                    }
-                    if (minInsistence <= 1) { Insistence = 100; }
-                    goalIValues.Add(new KeyValuePair<string, int>(currentGoal, Insistence));
-                    break;
-            }
-        }
-
-        // Find goal with the highest insistence value, using the previously-populated goalIValues list.
-        int max = -1;
-        for (int i = 0; i < goalIValues.Count; i++)
-        {
-            // If new max is found, set output values to the related goal and the goal condition.
-            if (goalIValues.ElementAt(i).Value > max)
-            {
-                max = goalIValues.ElementAt(i).Value;
-                
-                goal = goalIValues.ElementAt(i).Key;
-                goalFlag = goalList.Contains(new KeyValuePair<string, bool>(goal, true));
-            }
-        }
-
-        // Always returns highest insistence goal and the desired goal state.
-        return (goal, goalFlag);
-    }
 }
-

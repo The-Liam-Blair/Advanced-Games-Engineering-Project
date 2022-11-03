@@ -28,7 +28,7 @@ public class AimAtPlayer : GoapAction
     public override void reset()
     {
         isAiming = false;
-        cost = -1f;
+        cost = 1f;
         target = GameObject.Find("Player");
         startTime = 0f;
     }
@@ -50,9 +50,10 @@ public class AimAtPlayer : GoapAction
     {
         // Get angle difference between current rotation and rotation needed to aim and look at the player.
         // If the angle difference is < 20 degrees, then it's short enough that using a projectile item will be quick and useful.
-        // Otherwise, don't use projectile. (Rotation makes enemy stationary for balancing reasons).
+        // Otherwise, don't use projectile. In either case, aiming (and throwing items) requires player line of sight, so the enemy
+        // will chase the player regardless of an item is used or not. Aiming + throwing is only done if it is cheap enough.
         float angleDiff = Vector3.Angle(agent.transform.forward, target.transform.position - agent.transform.position);
-        cost = (angleDiff < 20f) ? -angleDiff : 9999f;
+        cost = (angleDiff < 20f) ? -angleDiff : 999f;
         return true;
     }
 
