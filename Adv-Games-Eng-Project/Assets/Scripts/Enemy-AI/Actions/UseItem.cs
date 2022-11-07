@@ -18,7 +18,7 @@ public class UseItem : GoapAction
         addEffect("hasItem", false);
         addEffect("aimingAtPlayer", false);
 
-        actionEnabled = false; // Action enabling may still need worked on
+        actionEnabled = true; // Action enabling may still need worked on
     }
  
 

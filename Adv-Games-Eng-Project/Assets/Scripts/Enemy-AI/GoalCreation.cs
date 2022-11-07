@@ -218,12 +218,10 @@ public class GoalCreation : MonoBehaviour, IGoap
                 else if (hits[i + 5].collider.gameObject.tag == "Item" &&
                          GetComponent<Inventory>().IteminInventory == null && GetComponent<UseItem>().isActionEnabled())
                 {
-                    WorldData.EditDataValue(new KeyValuePair<string, bool>("hasItem", true)); // Item obtained! Update world knowledge to reflect this.
-                    gameObject.GetComponent<NavMeshAgent>().destination = hits[i + 5].collider.gameObject.transform.position; // Go to the item position to grab it.
+                    WorldData.AddItemLocation(hits[i + 5].transform.gameObject);
                 }
             }
         }
-
 
         /////////////////////////////
         //// -- UPDATE TIMERS -- ////

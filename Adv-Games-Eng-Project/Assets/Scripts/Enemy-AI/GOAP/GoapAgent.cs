@@ -52,7 +52,7 @@ public sealed class GoapAgent : MonoBehaviour {
 		loadActions ();
 
         // Movement speed of the enemy.
-        GetComponent<NavMeshAgent>().speed = 1f;
+        GetComponent<NavMeshAgent>().speed = 11f;
 
 		// 'Pointer' to the world data class.
         WorldData = new CurrentWorldKnowledge();
@@ -298,7 +298,8 @@ public class CurrentWorldKnowledge
     private enum GOALS
     {
         CHASEPLAYER,
-        PATROL
+        PATROL,
+        FINDITEM
     };
 
     // Stores world changes as a key value pair of a fact about the world and if it's true or false.
@@ -312,6 +313,12 @@ public class CurrentWorldKnowledge
 
 	// Current goal being pursued.
     public Tuple<string, bool, int> currentGoal;
+
+    // List of sighted items, mostly used for getting their location.
+    public List<GameObject> ItemLocations;
+
+    // Stores if a player used item (Projectile or trap) is sighted, used to avoid it, if it knows how to.
+    public List<GameObject> PlayerProjectiles;
 
     public CurrentWorldKnowledge()
     {
@@ -329,6 +336,33 @@ public class CurrentWorldKnowledge
         Goals = new List<Tuple<string, bool, int>>();
         Goals.Add(new Tuple<string, bool, int>("attackPlayer", true, -1));
         Goals.Add(new Tuple<string, bool, int>("isPatrolling", true, -1));
+        Goals.Add(new Tuple<string, bool, int>("hasItem", true, -1));
+
+        ItemLocations = new List<GameObject>();
+        PlayerProjectiles = new List<GameObject>();
+    }
+
+    public void AddItemLocation(GameObject item)
+    {
+        foreach (GameObject items in ItemLocations)
+        {
+            if (items.Equals(item))
+            {
+                return;
+            }
+        }
+        ItemLocations.Add(item);
+    }
+
+    public void RemoveItemLocation(GameObject item)
+    {
+        for (int i = 0; i < ItemLocations.Count; i++)
+        {
+            if (ItemLocations[i].Equals(item))
+            {
+                ItemLocations.RemoveAt(i);
+            }
+        }
     }
 
     /// <summary>
@@ -479,6 +513,14 @@ public class CurrentWorldKnowledge
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
 
+                // Find an item if an item has been seen. Provides medium insistence, meaning some other goals may override this goal.
+                // If the enemy hasn't seen any items yet or already has one, this goal's insistence is set to -1, meaning it will not be picked.
+                case GOALS.FINDITEM:
+                    Insistence = -1;
+                    if(ItemLocations.Count > 0 && GetFactState("hasItem", false)) { Insistence += 56; }
+                    UpdateGoalInsistence(Goals[i], Insistence, i);
+                    break;
+
                 // Patrol goal can only be chosen if no other goal has an insistence value of 1 or higher. Essentially, this
                 // means that it's only chosen if no other better goal can be found at this time.
                 case GOALS.PATROL:
@@ -488,7 +530,7 @@ public class CurrentWorldKnowledge
                         if(goals.Item1 == "isPatrolling") { continue; }
                         if (goals.Item3 < minInsistence) { minInsistence = goals.Item3; } // Item 3 - Insistence value of goal.
                     }
-                    if (minInsistence <= 1) { Insistence += 100; }
+                    if (minInsistence <= 1) { Insistence += 10; }
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
             }
