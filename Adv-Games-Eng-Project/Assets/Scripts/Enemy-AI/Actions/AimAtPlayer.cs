@@ -16,11 +16,12 @@ public class AimAtPlayer : GoapAction
     public AimAtPlayer()
     {
         addPrecondition("hasItem", true);
+        addPrecondition("foundPlayer", true);
         addPrecondition("aimingAtPlayer", false);
 
         addEffect("aimingAtPlayer", true);
 
-        actionEnabled = true;
+        actionEnabled = true;   
     }
 
 

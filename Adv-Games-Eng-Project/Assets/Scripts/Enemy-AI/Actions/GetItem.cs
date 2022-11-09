@@ -67,11 +67,11 @@ public class GetItem : GoapAction
     public override bool perform(GameObject agent)
     {
         // Action is forcefully run when it's running cost becomes too high. This checks if that condition has been triggered.
-        if (!base.perform(agent))
-        {
-            return false; 
+        //if (!base.perform(agent))
+        //{
+        //    return false; 
 
-        };
+        //};
 
         gotItem = true;
 

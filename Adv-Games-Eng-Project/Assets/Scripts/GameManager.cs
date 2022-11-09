@@ -3,14 +3,17 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
+using System.Threading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
 using Quaternion = UnityEngine.Quaternion;
 using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
+using Vector4 = System.Numerics.Vector4;
 
 public class GameManager : MonoBehaviour
 {
@@ -72,7 +75,7 @@ public class GameManager : MonoBehaviour
 
     }
 
-    private void Update()
+    private void LateUpdate()
     {
         // If an item was picked up...
         if (deactivatedCount > 0)
@@ -88,8 +91,26 @@ public class GameManager : MonoBehaviour
             }
         }
 
+        GameObject.Find("IOutput").GetComponent<Text>().text = string.Empty;
+        GameObject.Find("AcOutput").GetComponent<Text>().text = string.Empty;
+
         // Update output with aggressiveness value.
-        GameObject.Find("Output").GetComponent<Text>().text = GoapAgent.aggressiveness.ToString();
+        GameObject.Find("AOutput").GetComponent<Text>().text = GoapAgent.aggressiveness.ToString();
+
+            
+        foreach (Tuple<string, bool, int> goal in GameObject.FindGameObjectWithTag("Enemy").GetComponent<GoapAgent>().WorldData.GetGoals())
+        {
+            GameObject.Find("IOutput").GetComponent<Text>().text += goal.Item3 + "\n";
+        }
+
+        foreach (GoapAction a in GameObject.FindGameObjectWithTag("Enemy").GetComponent<GoapAgent>().getCurrentActions())
+        {
+            if(GameObject.Find("AcOutput").GetComponent<Text>().text == string.Empty)
+            {
+                GameObject.Find("AcOutput").GetComponent<Text>().text += a._name;
+            }
+            GameObject.Find("AcOutput").GetComponent<Text>().text += "--> " + a._name;
+        }
     }
 
     // When an item is picked up, deactivate it so it can be re-spawned later on.
@@ -166,6 +187,8 @@ public class GameManager : MonoBehaviour
     {
         int tries = 0;
         Vector3 pos = Vector3.zero;
+        Bounds NavMeshBounds = GameObject.Find("Plane").GetComponent<MeshRenderer>().bounds;
+
         NavMeshPath path = new NavMeshPath();
 
 
@@ -173,8 +196,8 @@ public class GameManager : MonoBehaviour
         while (tries < 100)
         {
             tries++;
-            // Try a new random position to spawn the item pickup.
-            pos = new Vector3(Random.Range(0, 30), 1f, Random.Range(-30, 30));
+            // Generate a new position on the nav mesh
+            pos = new Vector3(Random.Range(NavMeshBounds.min.x, NavMeshBounds.max.x), 1.1f, Random.Range(NavMeshBounds.min.z, NavMeshBounds.max.z));
 
             // If this position is within 10 units of a nearby nav mesh point...
             if (NavMesh.SamplePosition(pos, out NavMeshHit navMeshPos, 3f, 1))

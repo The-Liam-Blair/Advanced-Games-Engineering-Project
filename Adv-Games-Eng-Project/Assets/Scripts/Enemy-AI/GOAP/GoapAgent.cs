@@ -90,6 +90,11 @@ public sealed class GoapAgent : MonoBehaviour {
 		return currentActions.Count > 0;
 	}
 
+    public Queue<GoapAction> getCurrentActions()
+    {
+        return currentActions;
+    }
+
 	private void createIdleState() {
 		idleState = (fsm, gameObj) => {
 			// GOAP planning
@@ -544,6 +549,11 @@ public class CurrentWorldKnowledge
     public Tuple<string, bool, int> GetCurrentGoal()
     {
         return currentGoal;
+    }
+
+    public List<Tuple<string, bool, int>> GetGoals()
+    {
+        return Goals;
     }
 
     /// <summary>
