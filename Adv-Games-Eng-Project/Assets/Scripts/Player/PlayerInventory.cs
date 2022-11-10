@@ -2,7 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// todo: Make inventory abstract for enemy + player inventories
+/// <summary>
+/// Player inventory, which extends the normal inventory class. Additionally also stores key pieces for the player.
+/// </summary>
 public class PlayerInventory : Inventory
 {
     public int keyPieceCount

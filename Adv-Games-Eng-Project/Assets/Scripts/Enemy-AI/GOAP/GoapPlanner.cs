@@ -2,17 +2,20 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-/**
- * Plans what actions can be completed in order to fulfill a goal state.
- */
+/// <summary>
+/// Class used to create action plans.
+/// </summary>
 public class GoapPlanner
 {
-
-	/**
-	 * Plan what sequence of actions can fulfill the goal.
-	 * Returns null if a plan could not be found, or a list of the actions
-	 * that must be performed, in order, to fulfill the goal.
-	 */
+    
+	/// <summary>
+	/// Tries to create a plan using the given agent, action list, world state and desired goal state.
+	/// </summary>
+	/// <param name="agent">Agent who the plan is for.</param>
+	/// <param name="availableActions">THe list of actions the agent can do.</param>
+	/// <param name="worldState">The current world state for this agent.</param>
+	/// <param name="goal">The desired goal state which the agent is trying to fulfill.</param>
+	/// <returns>An action plan if a plan is found, otherwise null.</returns>
 	public Queue<GoapAction> plan(GameObject agent,
 								  HashSet<GoapAction> availableActions, 
 	                              HashSet<KeyValuePair<string,bool>> worldState, 
@@ -76,13 +79,17 @@ public class GoapPlanner
 		return queue;
 	}
 
-	/**
-	 * Returns true if at least one solution was found.
-	 * The possible paths are stored in the leaves list. Each leaf has a
-	 * 'runningCost' value where the lowest cost will be the best action
-	 * sequence.
-	 */
-	private bool buildGraph (Node parent, List<Node> leaves, HashSet<GoapAction> usableActions, HashSet<KeyValuePair<string,bool>> goal)
+	 /// <summary>
+	 /// Bulds the node graph, using A* to find the best node path. Each node represents a new world state, and each edge represents an action
+	 /// being taken to reach that new node. The cheapest path is then found by calculating and adding each action's cost, and finding the cheapest action set.
+	 /// Recursive function.
+	 /// </summary>
+	 /// <param name="parent">Parent node of the current node being considered.</param>
+	 /// <param name="leaves">Child node(s) of the current node.</param>
+	 /// <param name="usableActions">Actions that can be completed in this currently-simulated world state (Each action's preconditions are satisfied).</param>
+	 /// <param name="goal">Desired goal state.</param>
+	 /// <returns>True: an action set is found that satisfies the goal state, otherwise false.</returns>
+    private bool buildGraph (Node parent, List<Node> leaves, HashSet<GoapAction> usableActions, HashSet<KeyValuePair<string,bool>> goal)
 	{
 		bool foundOne = false;
 
@@ -114,9 +121,13 @@ public class GoapPlanner
 		return foundOne;
 	}
 
-	/**
-	 * Create a subset of the actions excluding the removeMe one. Creates a new set.
-	 */
+
+     /// <summary>
+	 /// Creates a subset of actions except the removeMe action. Used to branch out the node tree when building the graph.
+	 /// </summary>
+	 /// <param name="actions">List of (usable) actions.</param>
+	 /// <param name="removeMe">Action, that is to be explicitly removed from this subset.</param>
+	 /// <returns>The action subset.</returns>
 	private HashSet<GoapAction> actionSubset(HashSet<GoapAction> actions, GoapAction removeMe) {
 		HashSet<GoapAction> subset = new HashSet<GoapAction> ();
 		foreach (GoapAction a in actions) {
@@ -125,11 +136,14 @@ public class GoapPlanner
 		}
 		return subset;
 	}
-
-	/**
-	 * Check that all items in 'test' are in 'state'. If just one does not match or is not there
-	 * then this returns false.
-	 */
+     
+     /// <summary>
+	 /// Checks the state of a currently-simulated world state and compares it with the desired goal state. If these states
+	 /// match, then a path to a goal state has been found.
+	 /// </summary>
+	 /// <param name="test">The goal state.</param>
+	 /// <param name="state">The simulated state being tested.</param>
+	 /// <returns>True if the simulated world state 100% satisfies the goal state, otherwise false.</returns>
 	private bool inState(HashSet<KeyValuePair<string,bool>> test, HashSet<KeyValuePair<string,bool>> state) {
 		bool allMatch = true;
 		foreach (KeyValuePair<string,bool> t in test) {
@@ -146,9 +160,13 @@ public class GoapPlanner
 		return allMatch;
 	}
 	
-	/**
-	 * Apply the stateChange to the currentState
-	 */
+
+	 /// <summary>
+	 /// Apply a change to a simulated world state. Essentially changes a node's world state based on an action edge's effects to propagate the node graph.
+	 /// </summary>
+	 /// <param name="currentState">Unmodified node state.</param>
+	 /// <param name="stateChange">Action effect(s) which is used to change the node's state.</param>
+	 /// <returns></returns>
 	private HashSet<KeyValuePair<string,bool>> populateState(HashSet<KeyValuePair<string,bool>> currentState, HashSet<KeyValuePair<string,bool>> stateChange) {
 		HashSet<KeyValuePair<string,bool>> state = new HashSet<KeyValuePair<string,bool>> ();
 		// copy the KVPs over as new objects
@@ -180,9 +198,10 @@ public class GoapPlanner
 		return state;
 	}
 
-	/**
-	 * Used for building up the graph and holding the running costs of actions.
-	 */
+
+	 /// <summary>
+	 /// Node class used to instantiate the node graph and store at each node the simulated world state, action to get to the node, and accumulated cost.
+	 /// </summary>
 	private class Node {
 		public Node parent;
 		public float runningCost;

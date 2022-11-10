@@ -5,6 +5,9 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 
+/// <summary>
+/// Handles all player inputs.
+/// </summary>
 public class PlayerControl : MonoBehaviour
 {
     // Movement speed scalar.
@@ -94,11 +97,20 @@ public class PlayerControl : MonoBehaviour
         }
     }
 
+
+    /// <summary>
+    /// Stun the player for a given duration. Stun in this instance disables all inputs, including movement and using items.
+    /// </summary>
+    /// <param name="duration">Duration of the stun.</param>
     public void Stun(int duration)
     {
         StartCoroutine(StunCoroutine(duration));
     }
 
+    /// <summary>
+    /// Slow the player for a given duration. Slow in this instance reduces the player's movement speed by 66%.
+    /// </summary>
+    /// <param name="duration">Duration of the slow effect.</param>
     public void Slow(int duration)
     {
         StartCoroutine(SlowCoroutine(duration));
@@ -117,9 +129,13 @@ public class PlayerControl : MonoBehaviour
         yield return null;
     }
 
+    /// <summary>
+    /// Slow the player for a given duration
+    /// </summary>
+    /// <param name="duration">Length of the slow in seconds.</param>
     IEnumerator SlowCoroutine(int duration)
     {
-        speedMultiplier = 0.33f; // Reduce multiplier by 2/3's for movement debuff.
+        speedMultiplier = 0.33f; // Reduce multiplier by 2/3's for movement slowness.
         yield return new WaitForSeconds(duration);
         speedMultiplier = 1f; // Return multiplier back to 1 for normal speed.
 

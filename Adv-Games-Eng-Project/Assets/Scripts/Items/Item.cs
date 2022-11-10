@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
+/// <summary>
+/// Implementation of items, primarily item statistics such as effects.
+/// </summary>
 public class Item
 {
 
-    // How is the item used?
+    // Item usage.
     protected enum ItemType
     {
         THROWABLE,
@@ -15,6 +18,7 @@ public class Item
 
     protected ItemType type;
 
+    // Type and effect getter/setter.
     public new string GetType()
     {
         return type.ToString();
@@ -49,7 +53,13 @@ public class Item
         set;
     }
 
-    // todo: use enums/less human error method of setting stats instead of pure strings.
+    /// <summary>
+    /// Called when an item is picked up, essentially a constructor for the item and it's stats.
+    /// </summary>
+    /// <param name="type">Item type.</param>
+    /// <param name="effect">Item effect.</param>
+    /// <param name="duration">Item duration.</param>
+    /// <param name="owner">Item owner.</param>
     public void SetItem(string type, string effect, int duration, GameObject owner)
     {
 

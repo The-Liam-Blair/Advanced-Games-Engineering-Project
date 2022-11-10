@@ -10,7 +10,9 @@ using JetBrains.Annotations;
 using UnityEngine.AI;
 using Debug = UnityEngine.Debug;
 
-
+/// <summary>
+/// Defines the agent that follows the GOAP system. Includes agent states and local variables such as actions and world data.
+/// </summary>
 public sealed class GoapAgent : MonoBehaviour {
 
 	private FSM stateMachine;
@@ -39,6 +41,10 @@ public sealed class GoapAgent : MonoBehaviour {
 	// the value increases. Reduced significantly after executing a chase plan. Used to make the enemy forcefully encounter the player more often.
     public float aggressiveness;
 
+	/// <summary>
+	/// On awake, initialise the state machine with 3 states: idle, move and perform.
+	/// Then load the actions and start the state machine in the idle state.
+	/// </summary>
     void Awake() {
 		stateMachine = new FSM ();
 		availableActions = new HashSet<GoapAction> ();
@@ -62,7 +68,7 @@ public sealed class GoapAgent : MonoBehaviour {
 
         aggressiveness = 0;
 
-        // Set enemy name to number of enemies in the scene currently. For example, 1st enemy added --> enemy count is now 1 --> enemy's name is "1".
+        // Set enemy name to number of enemies in the scene currently, starting at 0. E.g., first enemy is known as "0".
         // Must be done in awake function as enemy name is used as an indexer for assigning movement waypoints and awake functions are called before start functions.
         name = GameObject.Find("_GAMEMANAGER").GetComponent<GameManager>().GetEnemyCount().ToString();
 
@@ -72,17 +78,29 @@ public sealed class GoapAgent : MonoBehaviour {
 	void Update () {
         stateMachine.Update (this.gameObject);
     }
-
+	
+	/// <summary>
+	/// Local world knowledge getter.
+	/// </summary>
+	/// <returns>World knowledge</returns>
     public CurrentWorldKnowledge getWorldData()
     {
         return WorldData;
     }
 
-
+	/// <summary>
+	/// Add action to the action list.
+	/// </summary>
+	/// <param name="a">Action to be added.</param>
     public void addAction(GoapAction a) {
 		availableActions.Add (a);
 	}
 
+	/// <summary>
+	/// Specfic action getter
+	/// </summary>
+	/// <param name="action">Action trying to retrieve</param>
+	/// <returns>The action, or null if it doesn't exist in the list.</returns>
 	public GoapAction getAction(Type action) {
 		foreach (GoapAction g in availableActions) {
 			if (g.GetType().Equals(action) )
@@ -90,20 +108,35 @@ public sealed class GoapAgent : MonoBehaviour {
 		}
 		return null;
 	}
-
+	
+	/// <summary>
+	/// Action remover
+	/// </summary>
+	/// <param name="action">Action to remove.</param>
 	public void removeAction(GoapAction action) {
 		availableActions.Remove (action);
 	}
 
+	/// <summary>
+	/// Action list size getter. Used to determine if all actions in a plan have been completed.
+	/// </summary>
+	/// <returns>True: actions still exist, otherwise false.</returns>
 	private bool hasActionPlan() {
 		return currentActions.Count > 0;
 	}
 
+	/// <summary>
+	/// Action plan getter
+	/// </summary>
+	/// <returns>Action list.</returns>
     public Queue<GoapAction> getCurrentActions()
     {
         return currentActions;
     }
 
+	/// <summary>
+	/// Idle agent state. Agent is only in this state if a plan has been completed or aborted, and so a new plan is created.
+	/// </summary>
 	private void createIdleState() {
 		idleState = (fsm, gameObj) => {
 			// GOAP planning
@@ -134,6 +167,10 @@ public sealed class GoapAgent : MonoBehaviour {
 		};
 	}
 	
+	/// <summary>
+	/// Movement state, where the agent is trying to move to an action's target location. The most common state to be in, it's only accessed if the current
+	/// action has a range/positional requirement. Once the agent has reached the relevant location, they exit this state.
+	/// </summary>
 	private void createMoveToState() {
 		moveToState = (fsm, gameObj) => {
 			// move the game object
@@ -154,6 +191,9 @@ public sealed class GoapAgent : MonoBehaviour {
         };
 	}
 	
+	/// <summary>
+	/// Perform state, where the agent is able to perform the current action in the plan.
+	/// </summary>
 	private void createPerformActionState() {
 
 		performActionState = (fsm, gameObj) => {
@@ -278,7 +318,7 @@ public sealed class GoapAgent : MonoBehaviour {
 
     /// <summary>
 	/// Stun the enemy for a given duration. Stun in this instance for the enemy sets movement speed to 0, and so disables movement and rotation.
-	/// <br>(Basic implementation, the enemy <strong>--CAN--</strong> perform actions if it's current action's target reaches the enemy, but this should be rare).</br>
+	/// <br>(Basic implementation, the enemy <strong>CAN</strong> perform actions if it's current action's target reaches the enemy, but this should be rare).</br>
 	/// </summary>
 	/// <param name="duration">Length of the stun effect in seconds.</param>
     IEnumerator StunCoroutine(int duration)
@@ -291,6 +331,10 @@ public sealed class GoapAgent : MonoBehaviour {
         yield return null;
     }
 
+	/// <summary>
+	/// Slows the enemy for a given duration. Slow is a direct -66% movement modifier.
+	/// </summary>
+	/// <param name="duration">Duration of the slow effect.</param>
     IEnumerator SlowCoroutine(int duration)
     {
         GetComponent<NavMeshAgent>().speed = 3.33f; // Apply speed debuff.

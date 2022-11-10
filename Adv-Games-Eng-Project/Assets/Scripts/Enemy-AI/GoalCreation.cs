@@ -20,7 +20,7 @@ using static System.Collections.Specialized.BitVector32;
  */
 public class GoalCreation : MonoBehaviour, IGoap
 {
-
+    // Reference to the agent's world data.
     public CurrentWorldKnowledge WorldData;
 
     void Start()
@@ -88,21 +88,20 @@ public class GoalCreation : MonoBehaviour, IGoap
 		Debug.Log ("<color=red>Plan Aborted</color> "+GoapAgent.prettyPrint(aborter));
 	}
 
-    /**
-     * Called once per frame while the enemy agent is in the 'MoveTo' state.
-     * Contains most dynamic game logic, such as dynamic movement cost checking and detecting objects.
-     * False return = Agent has not arrived at the action's location yet.
-     * True  return = Agent no longer needs to move to the action location. Either indicates that it has reached the action location or the
-     *                action has been aborted. Essentially ends the loop in this movement state.
-     */
+    /// <summary>
+    /// Movement state of the agent. As such, this state is the most common state the agent will be in, and includes all real-time calculations such as
+    /// checking goal insistence and handling ray casts for sight.
+    /// </summary>
+    /// <param name="nextAction">The current action, which the agent is currently moving towards.</param>
+    /// <returns>True if the agent arrived at the action location or the action was bailed. False if the agent hasn't arrived at the action location yet.</returns>
     public bool moveAgent(GoapAction nextAction)
     {
-        Debug.Log(GetComponent<GoapAgent>().aggressiveness);
         /////////////////////////////////
         // -- CHECK GOAL INSISTENCE -- //
         /////////////////////////////////
 
         var currentGoal = WorldData.GetCurrentGoal(); // Fetch current goal.
+        
         // If the current goal has changed (Which means a new goal has been selected)...
         if (currentGoal.Item1 != WorldData.DetermineNewGoal().ElementAt(0).Key)
         {
@@ -250,7 +249,7 @@ public class GoalCreation : MonoBehaviour, IGoap
         GetComponent<GoapAgent>().aggressiveness += 4 * Time.deltaTime;
         if (GetComponent<GoapAgent>().aggressiveness >= 100f) { GetComponent<GoapAgent>().aggressiveness = 100f; }
 
-            // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
+        // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
         return false;
 	}
 }

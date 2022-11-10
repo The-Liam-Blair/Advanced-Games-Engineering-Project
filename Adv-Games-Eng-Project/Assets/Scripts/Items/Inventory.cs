@@ -2,7 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// todo: Make inventory abstract for enemy + player inventories
+/// <summary>
+/// Inventory for both enemies and players. Includes using items and holding one item only.
+/// </summary>
 public class Inventory : MonoBehaviour
 {
 

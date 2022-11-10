@@ -31,14 +31,15 @@ public abstract class GoapAction : MonoBehaviour {
     protected bool actionEnabled;
 
     // Representation of an enemy's understanding of a given item or game mechanic.
-    // Knowledge is gained from witnessing the player use an action (Small increase), or being a victim of the item (Large increase).
+    // Knowledge is gained from being hurt by the item. todo: maybe from seeing the item in use as well?
     // If knowledge >= 100 : Enemy will be able to utilise that item or game mechanic against the player.
-    // If knowledge >= 200 : Enemy additionally will try to counter player-made items or mechanics used against the enemy (Dodging, dismantling or avoiding).
+    // If knowledge >= 200 : Enemy additionally will try to counter player-made items or mechanics used against the enemy, primarily dodging.
     protected int actionKnowledge;
     protected bool canCounterAction;
-
+    
     public string _name;
 
+    // Reference to the agent's world knowledge.
     public CurrentWorldKnowledge WorldData;
 
     void Start()
@@ -56,6 +57,9 @@ public abstract class GoapAction : MonoBehaviour {
         canCounterAction = false;
     }
 
+    /// <summary>
+    /// Resets the action. All action properties are reset every time a new plan starts to be planned.
+    /// </summary>
     public void doReset() {
 		inRange = false;
 		target = null;
@@ -66,24 +70,42 @@ public abstract class GoapAction : MonoBehaviour {
         WorldData = GetComponent<GoapAgent>().getWorldData();
     }
 
-    // Reset action after it's been used.
+    /// <summary>
+    /// Reset action after it's been used.
+    /// </summary>
     public abstract void reset();
     
-	// Check if the action has been completed yet.
+	/// <summary>
+    /// Check if the action has been completed yet.
+    /// </summary>
+    /// <returns>True if the action has been completed, false if it still needs more time for completion (In the perform state).</returns>
 	public abstract bool isDone();
     
-    // Check if the action is capable of being run later on in the current world state, used during planning.
+    /// <summary>
+    /// Check if the action is capable of being run later on in the current simulated world state, used during planning.
+    /// </summary>
+    /// <param name="agent">The agent who would be carrying out the action.</param>
+    /// <returns>True if the action is completable, false if it is not.</returns>
 	public abstract bool checkProceduralPrecondition(GameObject agent);
 
 
-    // Run the action, returns true if the action was successful.
+    /// <summary>
+    /// Action is run, in the perform state. Also contains implementation of checking if an action's cost is too high and so should be bailed.
+    /// </summary>
+    /// <param name="agent">Agent performing the action.</param>
+    /// <returns>False if the action fails, true otherwise.
+    /// <br></br> True return does NOT mean the action is over necessarily, it means that the perform loop was successful- more
+    /// time may be needed to complete the action.</returns>
     public virtual bool perform(GameObject agent)
     {
         return !currentCostTooHigh;
     }
 
 
-    // Check if the action requires the agent to be in range of the target.
+    /// <summary>
+    /// Check if the action requires the agent to be in range of the target.
+    /// </summary>
+    /// <returns>True if a range/positional requirement exists for this action, otherwise false.</returns>
     public abstract bool requiresInRange ();
 	
     
@@ -97,7 +119,7 @@ public abstract class GoapAction : MonoBehaviour {
 		this.inRange = inRange;
 	}
 
-	// Add or remove effects or preconditions to an action.
+	// Effect and precondition adders/removers.
 	public void addPrecondition(string key, bool value) 
     {
 		preconditions.Add (new KeyValuePair<string,bool>(key, value) );
@@ -155,14 +177,21 @@ public abstract class GoapAction : MonoBehaviour {
 	}
 
 
-    // Action enabled getter
+    /// <summary>
+    /// Checks if the action is enabled. A disabled action is not factored into the planning process.
+    /// </summary>
+    /// <returns>True if enabled, otherwise false.</returns>
     public bool isActionEnabled()
     {
         return actionEnabled;
     }
 
 
-    // Returns true walking distance length of a given nav mesh path.
+    /// <summary>
+    /// Calculates the float distance using a nav mesh path between the start and end point. Distance represents actual travel distance the agent needs to travel.
+    /// </summary>
+    /// <param name="path">The nav mesh path being tested for distance.</param>
+    /// <returns>The actual movement distance as a float value.</returns>
     public float GetPathLength(NavMeshPath path)
     {
 		float pathLength = 0f;
@@ -175,7 +204,7 @@ public abstract class GoapAction : MonoBehaviour {
     }
 
     /// <summary>
-    /// Called after an action is successfully performed; updates the world state fact base using the effect(s) of the action.
+    /// Called after an action is successfully performed, the action's effects are used to modify the agent's world knowledge.
     /// </summary>
     public void UpdateWorldState()
     {
@@ -187,12 +216,16 @@ public abstract class GoapAction : MonoBehaviour {
 
 
 
-    // Enemy gains knowledge from being the victim of actions similar to actions done by the player.
+    /// <summary>
+    /// Increase an agent's knowledge of this action. Called when the agent is a victim of a similar action.
+    /// When an agent's action knowledge exceeds certain thresholds, they may be able to learn the related action and then counter it.
+    /// </summary>
+    /// <param name="knowledge">Amount of knowledge to award to the agent.</param>
     public void IncreaseKnowledge(int knowledge)
     {
         actionKnowledge += knowledge;
 
-        if (knowledge >= 100) { actionEnabled = true; GetComponent<GoapAgent>().addAction(this); }
-        if (knowledge >= 200) { canCounterAction = true; }
+        if (!actionEnabled && actionKnowledge >= 100)    { actionEnabled = true; GetComponent<GoapAgent>().addAction(this); }
+        if (!canCounterAction && actionKnowledge >= 200) { canCounterAction = true; }
     }
 }

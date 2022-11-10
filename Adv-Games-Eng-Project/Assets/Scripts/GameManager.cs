@@ -16,6 +16,9 @@ using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 using Vector4 = System.Numerics.Vector4;
 
+/// <summary>
+/// Game manager handles multiple game systems, from spawning and using of items to generating enemies to generating the enemy stats output on the player camera.
+/// </summary>
 public class GameManager : MonoBehaviour
 {
     // Item pool
@@ -159,33 +162,47 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Add a new enemy instance to the game, as well as another waypoint object for it to use for patrolling.
+    /// <summary>
+    /// Add a new enemy instance to the game, as well as another waypoint object for it to use for patrolling. Called only
+    /// when the Add Enemy UI Button is pressed.
+    /// </summary>
     public void AddEnemy()
     {
-        Debug.Log("hhuh");
+        // Add new enemy and waypoint at valid positions.
         enemyObjects.Add(Instantiate(enemyPrefab, GetValidPosition(), Quaternion.identity));
         
         waypointObjects.Add(Instantiate(wayPointPrefab, Vector3.zero, Quaternion.identity));
+
+        // Update their names which is used for way point allocation to a unique ID number.
         waypointObjects[waypointObjects.Count - 1].name = "_WAYPOINT" + (waypointObjects.Count - 1).ToString();
         waypointObjects[waypointObjects.Count - 1].transform.parent = GameObject.Find("WAYPOINTS").transform;
 
         enemyObjects[enemyObjects.Count - 1].transform.parent = GameObject.Find("ENEMIES").transform;
     }
 
-    // Essentially only used to rename enemies in order of spawning (See GoapAgent.Awake).
+    /// <summary>
+    /// Essentially only used to rename enemies in order of spawning (See GoapAgent.Awake).
+    /// </summary>
+    /// <returns>Number of enemies that currently exist.</returns>
     public int GetEnemyCount()
     {
         return enemyObjects.Count;
     }
 
-    // When an item is picked up, deactivate it so it can be re-spawned later on.
+    /// <summary>
+    /// When an item is picked up, deactivate it so it can be re-spawned later on.
+    /// </summary>
+    /// <param name="name">Item name, which is used as it's unique ID so the right item can be despawned.</param>
     public void ItemPickedUp(int name)
     {
         itemPickups[name].SetActive(false);
         deactivatedCount++;
     }
 
-    // Re-spawn an item pickup by making it active again and teleporting it to a new position.
+    /// <summary>
+    /// Re-spawn an item pickup by making it active again and teleporting it to a new position.
+    /// </summary>
+    /// <param name="item">Item to be respawned.</param>
     private void GenerateNewItem(GameObject item)
     {
         // Item stats and usage are re-rolled when the item is re-spawned.
@@ -200,7 +217,7 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Called when an item is used, the item object is spawned, either a projectile or trap.
+    /// Called when an item is used, the item object is spawned, either a projectile or wall.
     /// </summary>
     /// <param name="attacker">The game object that used the item.</param>
     /// <param name="stats">Information relating to how the item should perform when used</param>
@@ -218,7 +235,7 @@ public class GameManager : MonoBehaviour
         // For the item (depending on if it's thrown or placed):
         // - Edit mesh to suit the item type.
         // - Enable kinematic for placed objects so they don't move from physics or collisions.
-        // - Set the scale of the object (Traps are large, projectiles are smaller).
+        // - Set the scale of the object (Walls are large, projectiles are smaller).
         switch (stats.GetType())
         {
             // Throwable: item object is a projectile that will be fired in-front of the user at great speed, intended to hit a target.
@@ -231,14 +248,14 @@ public class GameManager : MonoBehaviour
                 itemObjects[itemObjectsPoolPointer].GetComponent<Rigidbody>().AddForce(attacker.transform.forward.normalized * 20, ForceMode.Impulse);
                 break;
 
-            // Placeable: item object is a non-moving object that persists on the ground. Once stepped on by a target, it will apply it's debuff to it.
+            // Placeable: item object is a non-moving object that persists on the ground and blocks movement.
             case "WALL":
                 itemObjects[itemObjectsPoolPointer].GetComponent<MeshFilter>().sharedMesh = itemObjectPrefabs[1].GetComponent<MeshFilter>().sharedMesh;
                 itemObjects[itemObjectsPoolPointer].GetComponent<Rigidbody>().isKinematic = true;
                 itemObjects[itemObjectsPoolPointer].transform.localScale = new Vector3(6, 1.5f, 2);
                 itemObjects[itemObjectsPoolPointer].transform.rotation = Quaternion.LookRotation(attacker.transform.forward, Vector3.up);
 
-                // Trap is placed slightly further infront of the user than normal since it's much larger: Stops collisions with the user.
+                // Wall is placed slightly further infront of the user than normal since it's much larger: Stops collisions with the user.
                 itemObjects[itemObjectsPoolPointer].transform.position = attacker.transform.position + (attacker.transform.forward * 2f);
                 break;
         }
@@ -248,7 +265,11 @@ public class GameManager : MonoBehaviour
         if (itemObjectsPoolPointer > itemObjects.Count - 1) { itemObjectsPoolPointer = 0; }
 
     }
-
+    /// <summary>
+    /// Tries to find a valid position to place an object. Valid in this instance is a location on the nav mesh quad.
+    /// Currently may return positions that intersect with walls but does not (majorly) impact gameplay. todo.
+    /// </summary>
+    /// <returns>The valid position found.</returns>
     Vector3 GetValidPosition()
     {
         int tries = 0;
@@ -282,6 +303,13 @@ public class GameManager : MonoBehaviour
         return pos;
     }
 
+    /// <summary>
+    /// (Re)generates a newly-generated item's stats, randomly.
+    /// </summary>
+    /// <returns>The new stats of the item:
+    /// <br></br>Item type,
+    /// <br></br>Item effect,
+    /// <br></br>Item effect duration.</returns>
     private (string, string, int) GetRandomItemStats()
     {
         // Random item effect and type assignment.
@@ -299,9 +327,8 @@ public class GameManager : MonoBehaviour
         {
             // 10% chance for a wall item to be generated, otherwise a projectile.
             case 0:
-                type = "WALL"; // todo: <-- Placed items not implemented yet!
-                // Walls' duration is doubled as wall duration dictates how long the wall will persist for.
-                k *= 2;
+                type = "WALL";
+                k *= 2; // Walls' duration is doubled to give it more impact as it's only use is for blocking.
                 break;
 
             default:
@@ -313,7 +340,7 @@ public class GameManager : MonoBehaviour
         {
             case 0:
                 effect = "STUN";
-                k = Mathf.RoundToInt(k * 0.5f);
+                k = Mathf.RoundToInt(k * 0.5f); // Stun is a really strong effect, so it's duration is halved.
                 break;
 
             case 1:
@@ -345,11 +372,11 @@ public class GameManager : MonoBehaviour
         // Change mesh based on item type.
         switch (type)
         {
-            case "PLACEABLE":
+            case "WALL":
                 itemPickup.GetComponent<MeshFilter>().sharedMesh = itemPrefabs[1].GetComponent<MeshFilter>().sharedMesh;
                 break;
 
-            case "WALL":
+            case "THROWABLE":
                 itemPickup.GetComponent<MeshFilter>().sharedMesh = itemPrefabs[0].GetComponent<MeshFilter>().sharedMesh;
                 break;
         }

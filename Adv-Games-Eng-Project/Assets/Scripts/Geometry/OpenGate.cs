@@ -5,6 +5,8 @@ using UnityEngine;
 public class OpenGate : MonoBehaviour
 {
     private bool open;
+    
+    // If the player touches the gate and has all the key pieces, open the gate, winning the game.
     void OnCollisionEnter(Collision other)
     {
         if ( !open && other.gameObject.tag == "Player" && other.gameObject.GetComponent<PlayerInventory>().keyPieceCount == 3)

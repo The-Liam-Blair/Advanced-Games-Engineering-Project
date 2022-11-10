@@ -55,6 +55,10 @@ public class CurrentWorldKnowledge
         PlayerProjectiles = new List<GameObject>();
     }
 
+    /// <summary>
+    /// Add an item pickup's location to the knowledge base.
+    /// </summary>
+    /// <param name="item">The item game object that has been sighted.</param>
     public void AddItemLocation(GameObject item)
     {
         foreach (GameObject items in ItemLocations)
@@ -67,6 +71,10 @@ public class CurrentWorldKnowledge
         ItemLocations.Add(item);
     }
 
+    /// <summary>
+    /// Remove an item pickup's location from the knowledge base.
+    /// </summary>
+    /// <param name="item">Seen item to be removed.</param>
     public void RemoveItemLocation(GameObject item)
     {
         for (int i = 0; i < ItemLocations.Count; i++)
@@ -191,7 +199,7 @@ public class CurrentWorldKnowledge
     /// <summary>
     /// Re-calculate each goal's insistence value.
     /// <br></br>
-    /// Exists on a seperate function so it can be called repeatedly to constantly update each goal's insistence.
+    /// Exists on a separate function so it can be called repeatedly to constantly update each goal's insistence.
     /// </summary>
     public void DetermineGoalsInsistence()
     {
@@ -259,6 +267,10 @@ public class CurrentWorldKnowledge
         return currentGoal;
     }
 
+    /// <summary>
+    /// Get all goals.
+    /// </summary>
+    /// <returns>List of all goals.</returns>
     public List<Tuple<string, bool, int>> GetGoals()
     {
         return Goals;

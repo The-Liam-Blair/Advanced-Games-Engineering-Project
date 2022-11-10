@@ -5,6 +5,9 @@ using UnityEngine;
 using UnityEngine.AI;
 using static UnityEngine.UI.GridLayoutGroup;
 
+/// <summary>
+/// The item in action. This implementation is the used item, so handles collision detection and inflicting effects on victims.
+/// </summary>
 public class ItemObject : MonoBehaviour
 {
     // Stores it's stats so it can access the debuff type and it's duration.
@@ -13,7 +16,10 @@ public class ItemObject : MonoBehaviour
     // Prevents multiple collision runs from one instance of a collision.
     private bool hasCollided = true;
 
-    // Called when an item is picked up by either the player or the enemy.
+    /// <summary>
+    /// Called when an item is just used, the item's stats are set. Unique implementation for walls as they don't have effects.
+    /// </summary>
+    /// <param name="stats">The stats to assign the item object.</param>
     public void OnSpawn(Item stats)
     {
         itemStats = stats;
@@ -73,6 +79,10 @@ public class ItemObject : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+    /// <summary>
+    /// Lifetime of a placed wall before it expires.
+    /// </summary>
+    /// <param name="duration">Duration before expiring.</param>
     IEnumerator WallLifeTimeCoroutine(int duration)
     {
         yield return new WaitForSeconds(duration);
