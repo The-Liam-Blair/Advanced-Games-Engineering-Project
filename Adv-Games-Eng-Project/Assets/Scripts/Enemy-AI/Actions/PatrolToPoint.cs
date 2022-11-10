@@ -46,9 +46,10 @@ public class PatrolToPoint : GoapAction
     {
         // Target is not reset per frame (Target in this instance is an empty object for storing way point location).
         // Instead, the target is teleported to the next calculated way point and used for distance checking if the way point is reached.
+        // Each enemy's waypoint is basically the enemy's int value, as seen below, so each follow their own way points independently.
         if (target == null)
         {
-            target = GameObject.Find("_WAYPOINT");
+            target = GameObject.Find("_WAYPOINT" + Int32.Parse(GetComponent<GoapAgent>().name));
         }
 
 
@@ -62,7 +63,7 @@ public class PatrolToPoint : GoapAction
         Vector3 randWalkPoint = Vector3.zero;
 
         // Retrieve aggressiveness value.
-        float aggressiveness = GoapAgent.aggressiveness;
+        float aggressiveness = GetComponent<GoapAgent>().aggressiveness;
 
         // No. of tries to get a suitable path. Serves as an exit to the while loop if something goes wrong.
         int tries = 0;

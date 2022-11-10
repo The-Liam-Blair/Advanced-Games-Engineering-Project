@@ -18,13 +18,22 @@ public class ItemObject : MonoBehaviour
     {
         itemStats = stats;
         hasCollided = false;
+
+        if (itemStats.GetType() == "WALL")
+        {
+            itemStats.owner = null;
+            GetComponent<NavMeshObstacle>().enabled = true;
+
+            StartCoroutine(WallLifeTimeCoroutine(itemStats.duration));
+        }
     }
 
     protected void OnCollisionEnter(Collision other)
     {
         // Glitch where this collision function is called multiple times from 1 collision (Despite the object being disabled after the first run of this function).
         // Null item stats + 2nd col call = error. Bool collision check prevents this.
-        if (hasCollided) { return; }
+        // Also don't run if the item is a wall, since it's purpose is only to block pathways.
+        if (hasCollided || itemStats.GetType() == "WALL") { return; }
 
         hasCollided = true;
         
@@ -62,5 +71,13 @@ public class ItemObject : MonoBehaviour
             itemStats.owner = null;
         }
         gameObject.SetActive(false);
+    }
+
+    IEnumerator WallLifeTimeCoroutine(int duration)
+    {
+        yield return new WaitForSeconds(duration);
+        gameObject.SetActive(false);
+        GetComponent<NavMeshObstacle>().enabled = false;
+        yield return null;
     }
 }

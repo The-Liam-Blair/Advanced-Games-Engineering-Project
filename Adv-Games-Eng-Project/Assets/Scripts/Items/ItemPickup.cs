@@ -29,7 +29,7 @@ public class ItemPickup : MonoBehaviour
             else { other.gameObject.GetComponent<Inventory>().IteminInventory = item; }
 
             GameObject.Find("_GAMEMANAGER").GetComponent<GameManager>().ItemPickedUp(int.Parse((name)));
-            GameObject.FindGameObjectWithTag("Enemy").GetComponent<GoapAgent>().WorldData.RemoveItemLocation(gameObject);
+            GameObject.FindGameObjectWithTag("Enemy").GetComponent<GoapAgent>().getWorldData().RemoveItemLocation(gameObject);
         }
     }
 }

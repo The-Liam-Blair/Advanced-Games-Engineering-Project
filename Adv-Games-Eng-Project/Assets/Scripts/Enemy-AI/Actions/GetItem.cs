@@ -45,11 +45,11 @@ public class GetItem : GoapAction
     public override bool checkProceduralPrecondition(GameObject agent)
     {
         // If the enemy has seen at least 1 item...
-        if (GetComponent<GoapAgent>().WorldData.ItemLocations.Count > 0)
+        if (GetComponent<GoapAgent>().getWorldData().ItemLocations.Count > 0)
         {
             float closestItemDist = Int32.MaxValue;
             // Loop through the list of seen items, find the item that is closest (todo: Use nav mesh instead of vector distance).
-            foreach (GameObject item in GetComponent<GoapAgent>().WorldData.ItemLocations)
+            foreach (GameObject item in GetComponent<GoapAgent>().getWorldData().ItemLocations)
             {
                 if (Vector3.Distance(agent.transform.position, item.transform.position) < closestItemDist)
                 {
@@ -66,7 +66,8 @@ public class GetItem : GoapAction
     // Implementation of the action itself, does not include movement: Only the action AFTER arriving to the correct location.
     public override bool perform(GameObject agent)
     {
-        // Action is forcefully run when it's running cost becomes too high. This checks if that condition has been triggered.
+        // Quick fix currently for item retrieval cancelling early constantly for whatever reason.
+        // Will be properly fixed later and cancelling re-enabled.
         //if (!base.perform(agent))
         //{
         //    return false; 

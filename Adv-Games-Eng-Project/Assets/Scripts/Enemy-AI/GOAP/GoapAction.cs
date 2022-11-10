@@ -43,7 +43,7 @@ public abstract class GoapAction : MonoBehaviour {
 
     void Start()
     {
-        WorldData = GetComponent<GoapAgent>().WorldData;
+        WorldData = GetComponent<GoapAgent>().getWorldData();
         _name = GetType().FullName;
 
     }
@@ -63,7 +63,7 @@ public abstract class GoapAction : MonoBehaviour {
         currentMovementCost = 0f;
         currentCostTooHigh = false;
         resetCount = 0;
-        WorldData = GetComponent<GoapAgent>().WorldData;
+        WorldData = GetComponent<GoapAgent>().getWorldData();
     }
 
     // Reset action after it's been used.

@@ -10,7 +10,7 @@ public class Item
     protected enum ItemType
     {
         THROWABLE,
-        PLACEABLE
+        WALL
     }
 
     protected ItemType type;
@@ -30,7 +30,8 @@ public class Item
     {
         STUN,
         SLOW,
-        BLIND
+        BLIND,
+        NONE
     }
     protected ItemEffect effect;
 
@@ -51,17 +52,11 @@ public class Item
     // todo: use enums/less human error method of setting stats instead of pure strings.
     public void SetItem(string type, string effect, int duration, GameObject owner)
     {
-        // Set the item type.
-        switch (type)
-        {
-            case "THROWABLE":
-                this.type = ItemType.THROWABLE;
-                break;
-            case "PLACEABLE":
-                this.type = ItemType.PLACEABLE;
-                break;
-        }
-        
+
+        // Set the duration of the item's effect.
+        this.duration = duration;
+
+
         // Set the item's effect.
         switch (effect)
         {
@@ -76,7 +71,17 @@ public class Item
                 break;
         }
 
-        // Set the duration of the item's effect.
-        this.duration = duration;
+        // Set the item type.
+        switch (type)
+        {
+            case "THROWABLE":
+                this.type = ItemType.THROWABLE;
+                break;
+            case "WALL":
+                this.type = ItemType.WALL;
+                duration *= 2;
+                this.effect = ItemEffect.NONE;
+                break;
+        }
     }
 }

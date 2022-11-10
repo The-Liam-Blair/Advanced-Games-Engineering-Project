@@ -54,7 +54,7 @@ public class AimAtPlayer : GoapAction
         // Otherwise, don't use projectile. In either case, aiming (and throwing items) requires player line of sight, so the enemy
         // will chase the player regardless of an item is used or not. Aiming + throwing is only done if it is cheap enough.
         float angleDiff = Vector3.Angle(agent.transform.forward, target.transform.position - agent.transform.position);
-        cost = (angleDiff < 20f) ? -angleDiff : 999f;
+        cost = (angleDiff < 30f) ? -angleDiff : 999f;
         return true;
     }
 

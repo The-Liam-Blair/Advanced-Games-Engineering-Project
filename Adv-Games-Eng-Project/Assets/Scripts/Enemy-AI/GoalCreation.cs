@@ -25,7 +25,7 @@ public class GoalCreation : MonoBehaviour, IGoap
 
     void Start()
     {
-        WorldData = GetComponent<GoapAgent>().WorldData;
+        WorldData = GetComponent<GoapAgent>().getWorldData();
     }
 
     /**
@@ -95,8 +95,9 @@ public class GoalCreation : MonoBehaviour, IGoap
      * True  return = Agent no longer needs to move to the action location. Either indicates that it has reached the action location or the
      *                action has been aborted. Essentially ends the loop in this movement state.
      */
-    public bool moveAgent(GoapAction nextAction) 
+    public bool moveAgent(GoapAction nextAction)
     {
+        Debug.Log(GetComponent<GoapAgent>().aggressiveness);
         /////////////////////////////////
         // -- CHECK GOAL INSISTENCE -- //
         /////////////////////////////////
@@ -210,8 +211,8 @@ public class GoalCreation : MonoBehaviour, IGoap
                     GoapAgent.playerChaseTime = 0.01f;
 
                     // Massively reduce aggressiveness value as a result of attacking the player.
-                    GoapAgent.aggressiveness -= 75f;      
-                    if (GoapAgent.aggressiveness < 0) { GoapAgent.aggressiveness = 0; } // And don't let it reach a negative value.
+                    GetComponent<GoapAgent>().aggressiveness -= 75f;      
+                    if (GetComponent<GoapAgent>().aggressiveness < 0) { GetComponent<GoapAgent>().aggressiveness = 0; } // And don't let it reach a negative value.
                 }
 
                 // Enemy sees an item and doesn't own an item and has learned about using items...
@@ -246,8 +247,8 @@ public class GoalCreation : MonoBehaviour, IGoap
 
         // Increase aggressiveness if not chasing the player, decrease it at a more rapid scale while chasing the player.
         // Range of aggressive is 0 <= aggressiveness <= 100
-        GoapAgent.aggressiveness += 4 * Time.deltaTime;
-        if (GoapAgent.aggressiveness >= 100f) { GoapAgent.aggressiveness = 100f; }
+        GetComponent<GoapAgent>().aggressiveness += 4 * Time.deltaTime;
+        if (GetComponent<GoapAgent>().aggressiveness >= 100f) { GetComponent<GoapAgent>().aggressiveness = 100f; }
 
             // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
         return false;

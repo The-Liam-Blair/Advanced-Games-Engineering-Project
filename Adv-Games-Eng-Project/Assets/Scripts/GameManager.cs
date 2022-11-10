@@ -7,6 +7,7 @@ using System.Threading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Events;
 using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
@@ -36,9 +37,32 @@ public class GameManager : MonoBehaviour
     // Prefabs for item objects.
     [SerializeField] private GameObject[] itemObjectPrefabs;
 
+    // Enemy + waypoint object lists
+    private List<GameObject> enemyObjects = new List<GameObject>();
+    private List<GameObject> waypointObjects = new List<GameObject>();
 
-    private void Start()
+    // Enemy + waypoint prefab
+    [SerializeField] private GameObject enemyPrefab;
+    [SerializeField] private GameObject wayPointPrefab;
+
+    // UI Text Fields, used to show GOAP-related information.
+    // Current goal insistence values.
+    private Text IOutput;
+
+    // Current aggressiveness value.
+    private Text AOutput;
+
+    // Current action list (Actions in a plan that have been completed will be removed and updated in the UI).
+    private Text AcOutput;
+
+
+    private void Awake()
     {
+        IOutput = GameObject.Find("IOutput").GetComponent<Text>();
+        AOutput = GameObject.Find("AOutput").GetComponent<Text>();
+        AcOutput = GameObject.Find("AcOutput").GetComponent<Text>();
+
+
         // 4 item pickups can exist in the map at one time.
         deactivatedCount = 0;
         itemPickups.Capacity = 4;
@@ -48,9 +72,10 @@ public class GameManager : MonoBehaviour
             itemPickups.Add(Instantiate(itemPrefabs[0], GetValidPosition(), Quaternion.identity));
 
             // Init the items, adding the relevant components.
-            itemPickups[i].transform.parent = GameObject.Find("ItemPickups").transform;
+            itemPickups[i].transform.parent = GameObject.Find("ITEMPICKUPS").transform;
             itemPickups[i].SetActive(true);
             itemPickups[i].AddComponent<ItemPickup>();
+
             itemPickups[i].name = i.ToString();
 
             // Get stats for the item, which is currently random.
@@ -62,17 +87,30 @@ public class GameManager : MonoBehaviour
             itemPickups[i].GetComponent<ItemPickup>().InitItem(itemStats.Item1, itemStats.Item2, itemStats.Item3);
         }
 
-        // Init item objects; projectiles and traps. Only set active and used when an item is used.
+        // Init item objects; projectiles and walls. Only set active and used when an item is used.
         itemObjects.Capacity = 4;
         itemObjectsPoolPointer = 0;
         for (int i = 0; i < itemObjects.Capacity; i++)
         {
             itemObjects.Add(Instantiate(itemObjectPrefabs[0], Vector3.zero, Quaternion.identity));
-            itemObjects[i].transform.parent = GameObject.Find("ItemObjects").transform;
+
+            itemObjects[i].AddComponent<NavMeshObstacle>();
+            itemObjects[i].GetComponent<NavMeshObstacle>().carving = true;
+            itemObjects[i].GetComponent<NavMeshObstacle>().enabled = false;
+
+            itemObjects[i].transform.parent = GameObject.Find("ITEMOBJECTS").transform;
             itemObjects[i].SetActive(false);
             itemObjects[i].AddComponent<ItemObject>();
         }
 
+        // Init enemy objects list with 1 enemy with respective way point.
+        waypointObjects.Add(Instantiate(wayPointPrefab, Vector3.zero, Quaternion.identity));
+        enemyObjects.Add(Instantiate(enemyPrefab, GetValidPosition(), Quaternion.identity));
+
+        waypointObjects[0].name = "_WAYPOINT0";
+        waypointObjects[0].transform.parent = GameObject.Find("WAYPOINTS").transform;
+        
+        enemyObjects[0].transform.parent = GameObject.Find("ENEMIES").transform;
     }
 
     private void LateUpdate()
@@ -90,27 +128,54 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
-
-        GameObject.Find("IOutput").GetComponent<Text>().text = string.Empty;
-        GameObject.Find("AcOutput").GetComponent<Text>().text = string.Empty;
+        
+        // Reset text outputs.
+        IOutput.text = string.Empty;
+        AcOutput.text = string.Empty;
 
         // Update output with aggressiveness value.
-        GameObject.Find("AOutput").GetComponent<Text>().text = GoapAgent.aggressiveness.ToString();
+        AOutput.text = enemyObjects[0].GetComponent<GoapAgent>().aggressiveness.ToString();
 
             
-        foreach (Tuple<string, bool, int> goal in GameObject.FindGameObjectWithTag("Enemy").GetComponent<GoapAgent>().WorldData.GetGoals())
+        // For each goal the enemy has...
+        foreach (Tuple<string, bool, int> goal in GameObject.FindGameObjectWithTag("Enemy").GetComponent<GoapAgent>().getWorldData().GetGoals())
         {
-            GameObject.Find("IOutput").GetComponent<Text>().text += goal.Item3 + "\n";
+            // Get the goal's insistence value and output it.
+            IOutput.text += goal.Item3 + "\n";
         }
 
+        // For each action remaining in the action plan...
         foreach (GoapAction a in GameObject.FindGameObjectWithTag("Enemy").GetComponent<GoapAgent>().getCurrentActions())
         {
-            if(GameObject.Find("AcOutput").GetComponent<Text>().text == string.Empty)
+            // Output it in order of execution.
+            if(AcOutput.text == string.Empty)
             {
-                GameObject.Find("AcOutput").GetComponent<Text>().text += a._name;
+                AcOutput.text += a._name;
             }
-            GameObject.Find("AcOutput").GetComponent<Text>().text += "--> " + a._name;
+            else
+            {
+                AcOutput.text += "--> " + a._name;
+            }
         }
+    }
+
+    // Add a new enemy instance to the game, as well as another waypoint object for it to use for patrolling.
+    public void AddEnemy()
+    {
+        Debug.Log("hhuh");
+        enemyObjects.Add(Instantiate(enemyPrefab, GetValidPosition(), Quaternion.identity));
+        
+        waypointObjects.Add(Instantiate(wayPointPrefab, Vector3.zero, Quaternion.identity));
+        waypointObjects[waypointObjects.Count - 1].name = "_WAYPOINT" + (waypointObjects.Count - 1).ToString();
+        waypointObjects[waypointObjects.Count - 1].transform.parent = GameObject.Find("WAYPOINTS").transform;
+
+        enemyObjects[enemyObjects.Count - 1].transform.parent = GameObject.Find("ENEMIES").transform;
+    }
+
+    // Essentially only used to rename enemies in order of spawning (See GoapAgent.Awake).
+    public int GetEnemyCount()
+    {
+        return enemyObjects.Count;
     }
 
     // When an item is picked up, deactivate it so it can be re-spawned later on.
@@ -167,13 +232,14 @@ public class GameManager : MonoBehaviour
                 break;
 
             // Placeable: item object is a non-moving object that persists on the ground. Once stepped on by a target, it will apply it's debuff to it.
-            case "PLACEABLE":
+            case "WALL":
                 itemObjects[itemObjectsPoolPointer].GetComponent<MeshFilter>().sharedMesh = itemObjectPrefabs[1].GetComponent<MeshFilter>().sharedMesh;
                 itemObjects[itemObjectsPoolPointer].GetComponent<Rigidbody>().isKinematic = true;
-                itemObjects[itemObjectsPoolPointer].transform.localScale = new Vector3(2, 0.8f, 2);
-                
+                itemObjects[itemObjectsPoolPointer].transform.localScale = new Vector3(6, 1.5f, 2);
+                itemObjects[itemObjectsPoolPointer].transform.rotation = Quaternion.LookRotation(attacker.transform.forward, Vector3.up);
+
                 // Trap is placed slightly further infront of the user than normal since it's much larger: Stops collisions with the user.
-                itemObjects[itemObjectsPoolPointer].transform.position = attacker.transform.position + (attacker.transform.forward * 2.5f);
+                itemObjects[itemObjectsPoolPointer].transform.position = attacker.transform.position + (attacker.transform.forward * 2f);
                 break;
         }
         
@@ -187,7 +253,7 @@ public class GameManager : MonoBehaviour
     {
         int tries = 0;
         Vector3 pos = Vector3.zero;
-        Bounds NavMeshBounds = GameObject.Find("Plane").GetComponent<MeshRenderer>().bounds;
+        Bounds NavMeshBounds = GameObject.Find("Walkable").GetComponent<MeshRenderer>().bounds;
 
         NavMeshPath path = new NavMeshPath();
 
@@ -219,7 +285,7 @@ public class GameManager : MonoBehaviour
     private (string, string, int) GetRandomItemStats()
     {
         // Random item effect and type assignment.
-        // i = Item type (Thrown or placed).
+        // i = Item type (Thrown or a temporary wall placeable).
         // j = Item effect (Stun, slow or blind).
         // k = duration (Duration reduced by 50% for stunning effects since stuns are far stronger than slows or blinds).
         int i, j, k;
@@ -231,12 +297,15 @@ public class GameManager : MonoBehaviour
 
         switch (i)
         {
+            // 10% chance for a wall item to be generated, otherwise a projectile.
             case 0:
-                type = "THROWABLE";
+                type = "WALL"; // todo: <-- Placed items not implemented yet!
+                // Walls' duration is doubled as wall duration dictates how long the wall will persist for.
+                k *= 2;
                 break;
 
-            case 1:
-                type = "PLACEABLE"; // todo: <-- Placed items not implemented yet!
+            default:
+                type = "THROWABLE";
                 break;
         }
 
@@ -255,6 +324,10 @@ public class GameManager : MonoBehaviour
                 effect = "BLIND";
                 break;
         }
+
+        // Walls have no effects, it's just a wall.
+        if (type == "WALL") { effect = "NONE"; }
+        
         // return (type, effect, duration)
         return (type, effect, k);
 
@@ -276,7 +349,7 @@ public class GameManager : MonoBehaviour
                 itemPickup.GetComponent<MeshFilter>().sharedMesh = itemPrefabs[1].GetComponent<MeshFilter>().sharedMesh;
                 break;
 
-            case "THROWABLE":
+            case "WALL":
                 itemPickup.GetComponent<MeshFilter>().sharedMesh = itemPrefabs[0].GetComponent<MeshFilter>().sharedMesh;
                 break;
         }
@@ -294,6 +367,10 @@ public class GameManager : MonoBehaviour
 
             case "BLIND":
                 itemPickup.GetComponent<MeshRenderer>().material.color = Color.blue;
+                break;
+
+            case "NONE":
+                itemPickup.GetComponent<MeshRenderer>().material.color = Color.green;
                 break;
         }
     }
