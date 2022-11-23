@@ -55,7 +55,7 @@ public class GetItem : GoapAction
                 {
                     target = item;
                     closestItemDist = Vector3.Distance(agent.transform.position, item.transform.position);
-                    cost = closestItemDist + 10; // todo fix cost cancelling this action early
+                    cost = closestItemDist; // todo fix cost cancelling this action early
                 }
             }
             return true;

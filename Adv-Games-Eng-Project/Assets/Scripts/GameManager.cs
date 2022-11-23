@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Threading;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Events;
@@ -58,14 +59,27 @@ public class GameManager : MonoBehaviour
     // Current action list (Actions in a plan that have been completed will be removed and updated in the UI).
     private Text AcOutput;
 
+    // Camera
+   [SerializeField] private GameObject cam;
+
+   // 'Pointer' like value thats used to determine which enemy is currently being viewed on the enemy camera.
+    private int viewEnemy;
+
+    // Set to 0.3f every time the camera is switched or moved to another enemy to prevent multiple inputs per button press.
+    private float inputSleep;
+
 
     private void Awake()
     {
+        // Get references
+        viewEnemy = 0; // 1 enemy initially spawned, so starts at 0
+
         IOutput = GameObject.Find("IOutput").GetComponent<Text>();
         AOutput = GameObject.Find("AOutput").GetComponent<Text>();
         AcOutput = GameObject.Find("AcOutput").GetComponent<Text>();
 
 
+        // Init item pickups
         // 4 item pickups can exist in the map at one time.
         deactivatedCount = 0;
         itemPickups.Capacity = 4;
@@ -131,27 +145,49 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
-        
+
+        // Handle inputs to swap between enemies on the enemy camera.
+        // Checks if the sleep cooldown has ended, and is set to 0.33 after a successful camera switch.
+        // So unable to swap camera for 0.1 seconds after previous swap to prevent multiple inputs from 1 button press.
+        if (inputSleep < 0)
+        {
+            if (Input.GetAxisRaw("NextCam") > 0)
+            {
+                viewEnemy++;
+            }
+            else if (Input.GetAxisRaw("PreviousCam") > 0)
+            {
+                viewEnemy--;
+            }
+            inputSleep = 0.1f;
+        }
+
+        // Make sure the enemy index doesn't over/underflow.
+        if(viewEnemy > enemyObjects.Count - 1) { viewEnemy = 0; }
+        else if(viewEnemy < 0) { viewEnemy = enemyObjects.Count - 1; }
+
+
         // Reset text outputs.
         IOutput.text = string.Empty;
         AcOutput.text = string.Empty;
 
         // Update output with aggressiveness value.
-        AOutput.text = enemyObjects[0].GetComponent<GoapAgent>().aggressiveness.ToString();
+        AOutput.text = enemyObjects[viewEnemy].GetComponent<GoapAgent>().aggressiveness.ToString();
 
-            
+
         // For each goal the enemy has...
-        foreach (Tuple<string, bool, int> goal in GameObject.FindGameObjectWithTag("Enemy").GetComponent<GoapAgent>().getWorldData().GetGoals())
+        foreach (Tuple<string, bool, int> goal in enemyObjects[viewEnemy].GetComponent<GoapAgent>().getWorldData()
+                     .GetGoals())
         {
             // Get the goal's insistence value and output it.
             IOutput.text += goal.Item3 + "\n";
         }
 
         // For each action remaining in the action plan...
-        foreach (GoapAction a in GameObject.FindGameObjectWithTag("Enemy").GetComponent<GoapAgent>().getCurrentActions())
+        foreach (GoapAction a in enemyObjects[viewEnemy].GetComponent<GoapAgent>().getCurrentActions())
         {
             // Output it in order of execution.
-            if(AcOutput.text == string.Empty)
+            if (AcOutput.text == string.Empty)
             {
                 AcOutput.text += a._name;
             }
@@ -160,6 +196,13 @@ public class GameManager : MonoBehaviour
                 AcOutput.text += "--> " + a._name;
             }
         }
+
+        cam.transform.position = new Vector3(enemyObjects[viewEnemy].transform.position.x,
+            cam.transform.position.y,
+            enemyObjects[viewEnemy].transform.position.z);
+
+        // Decrease the sleep timer by dt.
+        inputSleep -= Time.deltaTime;
     }
 
     /// <summary>
@@ -315,14 +358,16 @@ public class GameManager : MonoBehaviour
         // Random item effect and type assignment.
         // i = Item type (Thrown or a temporary wall placeable).
         // j = Item effect (Stun, slow or blind).
-        // k = duration (Duration reduced by 50% for stunning effects since stuns are far stronger than slows or blinds).
+        // k = Item effect duration (Reduced by 50% for stun effects since stun is powerful, while doubled for wall items so that
+        //     walls can be utilized better by enemy/player.
         int i, j, k;
-        i = Random.Range(0, 2);
+        i = Random.Range(0, 10);
         j = Random.Range(0, 3);
-        k = Random.Range(6, 8);
+        k = Random.Range(8, 12);
 
         string type = "", effect = "";
 
+        // Item type
         switch (i)
         {
             // 10% chance for a wall item to be generated, otherwise a projectile.
@@ -336,6 +381,7 @@ public class GameManager : MonoBehaviour
                 break;
         }
 
+        // Item effect
         switch (j)
         {
             case 0:

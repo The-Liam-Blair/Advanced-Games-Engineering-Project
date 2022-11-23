@@ -9,6 +9,7 @@ using System.Xml.Schema;
 using JetBrains.Annotations;
 using UnityEngine.AI;
 using Debug = UnityEngine.Debug;
+using static UnityEngine.GraphicsBuffer;
 
 /// <summary>
 /// Defines the agent that follows the GOAP system. Includes agent states and local variables such as actions and world data.
@@ -32,12 +33,14 @@ public sealed class GoapAgent : MonoBehaviour {
     private CurrentWorldKnowledge WorldData;
 
 	// Records how long the enemy has chased the player in 1 action/goal. Forces the chase to stop after a set limit.
-    public static float playerChaseTime;
+    public float playerChaseTime;
 
 	// Cooldown prevents enemy from attacking the player while it is above 0f. Forces enemy to stop repeatedly chasing the player.
-    public static float playerChaseCooldown;
+    public float playerChaseCooldown;
 
-	// Value represents how aggressive the enemy should be. Higher aggressiveness = Enemy is given approximate player position with increasing accuracy as
+    public float sightingChaseCooldown;
+
+    // Value represents how aggressive the enemy should be. Higher aggressiveness = Enemy is given approximate player position with increasing accuracy as
 	// the value increases. Reduced significantly after executing a chase plan. Used to make the enemy forcefully encounter the player more often.
     public float aggressiveness;
 
@@ -281,9 +284,21 @@ public sealed class GoapAgent : MonoBehaviour {
     public void Slow(int duration)
     {
 		StartCoroutine(SlowCoroutine(duration));
-    }
+	}
 
-    public static string prettyPrint(HashSet<KeyValuePair<string,bool>> state) {
+
+   public void ReceiveCall(GameObject caller, GameObject target, string callerGoal)
+   {
+
+       if (callerGoal == "CHASEPLAYER" && sightingChaseCooldown < 0f)
+       {
+           sightingChaseCooldown = 5f;
+           WorldData.EditDataValue(new KeyValuePair<string, bool>("RECEIVECALL_playerSighting", true));
+           StartCoroutine(PlayerSightingExpirationCoroutine(3));
+       }
+   }
+
+   public static string prettyPrint(HashSet<KeyValuePair<string,bool>> state) {
 		String s = "";
 		foreach (KeyValuePair<string,bool> kvp in state) {
 			s += kvp.Key + ":" + kvp.Value.ToString();
@@ -342,6 +357,12 @@ public sealed class GoapAgent : MonoBehaviour {
         GetComponent<NavMeshAgent>().speed = 10f; // Inverse the debuff to get the normal speed again.
 
         yield return null;
+    }
+
+    IEnumerator PlayerSightingExpirationCoroutine(int expireTime)
+    {
+        yield return new WaitForSeconds(expireTime);
+        WorldData.EditDataValue(new KeyValuePair<string, bool>("RECEIVECALL_playerSighting", false));
     }
 
 }

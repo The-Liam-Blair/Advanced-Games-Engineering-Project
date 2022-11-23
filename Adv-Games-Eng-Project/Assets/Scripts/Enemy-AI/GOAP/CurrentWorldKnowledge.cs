@@ -12,7 +12,8 @@ public class CurrentWorldKnowledge
     {
         CHASEPLAYER,
         PATROL,
-        FINDITEM
+        FINDITEM,
+        CALL_PLAYERSIGHTED
     };
 
     // Stores world changes as a key value pair of a fact about the world and if it's true or false.
@@ -45,11 +46,16 @@ public class CurrentWorldKnowledge
 
         WorldData.Add(new KeyValuePair<string, bool>("hasItem", false));
 
+        WorldData.Add(new KeyValuePair<string, bool>("RECEIVECALL_playerSighting", false));
+        WorldData.Add(new KeyValuePair<string, bool>("moveToPlayerSighting", false));
+
+
         // Set list of all possible goals to choose from, and a placeholder insistence value of -1.
         Goals = new List<Tuple<string, bool, int>>();
         Goals.Add(new Tuple<string, bool, int>("attackPlayer", true, -1));
         Goals.Add(new Tuple<string, bool, int>("isPatrolling", true, -1));
         Goals.Add(new Tuple<string, bool, int>("hasItem", true, -1));
+        Goals.Add(new Tuple<string, bool, int>("moveToPlayerSighting", true, -1));
 
         ItemLocations = new List<GameObject>();
         PlayerProjectiles = new List<GameObject>();
@@ -238,7 +244,13 @@ public class CurrentWorldKnowledge
                 // If the enemy hasn't seen any items yet or already has one, this goal's insistence is set to -1, meaning it will not be picked.
                 case GOALS.FINDITEM:
                     Insistence = -1;
-                    if (ItemLocations.Count > 0 && GetFactState("hasItem", false)) { Insistence += 56; }
+                    if (ItemLocations.Count > 0 && GetFactState("hasItem", false)) { Insistence = 66; }
+                    UpdateGoalInsistence(Goals[i], Insistence, i);
+                    break;
+
+                case GOALS.CALL_PLAYERSIGHTED:
+                    Insistence = -1;
+                    if(GetFactState("RECEIVECALL_playerSighting", true)) { Insistence = 90; }
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
 

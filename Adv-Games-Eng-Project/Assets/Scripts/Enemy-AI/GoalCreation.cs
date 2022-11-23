@@ -138,7 +138,7 @@ public class GoalCreation : MonoBehaviour, IGoap
         nextAction.currentMovementCost += Time.deltaTime * 0.5f;
         
         // Check current movement cost to the expected action movement cost.
-        if (nextAction.currentMovementCost > nextAction.cost && GoapAgent.playerChaseTime == 0f)
+        if (nextAction.currentMovementCost > nextAction.cost && GetComponent<GoapAgent>().playerChaseTime == 0f)
         {
             // Movement cost is just too high, abort the plan (Force the action function to run null and return false, causing the plan to collapse and be restarted).
             if (nextAction.currentMovementCost > nextAction.cost * 2)
@@ -202,12 +202,12 @@ public class GoalCreation : MonoBehaviour, IGoap
                     8f))
             {
                 // If a ray cast hits the player and the enemy isn't in an active chase, begin the chase:
-                if (hits[i + 5].collider.gameObject.tag == "Player" && GoapAgent.playerChaseTime == 0f &&
-                    GoapAgent.playerChaseCooldown < 0f)
+                if (hits[i + 5].collider.gameObject.tag == "Player" && GetComponent<GoapAgent>().playerChaseTime == 0f &&
+                    GetComponent<GoapAgent>().playerChaseCooldown < 0f)
                 {
                     // Update world knowledge to reflect that the player has been found.
                     WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", true));
-                    GoapAgent.playerChaseTime = 0.01f;
+                    GetComponent<GoapAgent>().playerChaseTime = 0.01f;
 
                     // Massively reduce aggressiveness value as a result of attacking the player.
                     GetComponent<GoapAgent>().aggressiveness -= 75f;      
@@ -228,26 +228,28 @@ public class GoalCreation : MonoBehaviour, IGoap
         /////////////////////////////
 
         // If the enemy is in a chase and the chase lasts for over 5 seconds...
-        if (GoapAgent.playerChaseTime > 5f)
+        if (GetComponent<GoapAgent>().playerChaseTime > 5f)
         {
             WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", false)); // Set found player to false, stopping another chase player goal.
             WorldData.EditDataValue(new KeyValuePair<string, bool>("attackPlayer", false));
 
-            GoapAgent.playerChaseTime = 0f; // Reset chase timer.
-            GoapAgent.playerChaseCooldown = 5f; // Add a 5 second cooldown before the enemy can initiate another chase.
+            GetComponent<GoapAgent>().playerChaseTime = 0f; // Reset chase timer.
+            GetComponent<GoapAgent>().playerChaseCooldown = 5f; // Add a 5 second cooldown before the enemy can initiate another chase.
         }
 
         // If the player has been found by the enemy...
         if (WorldData.GetFactState("foundPlayer", true ))
         {
-            GoapAgent.playerChaseTime += Time.deltaTime; // The enemy is chasing the player! Increase chase timer by dt.
+            GetComponent<GoapAgent>().playerChaseTime += Time.deltaTime; // The enemy is chasing the player! Increase chase timer by dt.
         }
-        GoapAgent.playerChaseCooldown -= Time.deltaTime;
+        GetComponent<GoapAgent>().playerChaseCooldown -= Time.deltaTime;
 
         // Increase aggressiveness if not chasing the player, decrease it at a more rapid scale while chasing the player.
         // Range of aggressive is 0 <= aggressiveness <= 100
         GetComponent<GoapAgent>().aggressiveness += 4 * Time.deltaTime;
         if (GetComponent<GoapAgent>().aggressiveness >= 100f) { GetComponent<GoapAgent>().aggressiveness = 100f; }
+
+        GetComponent<GoapAgent>().sightingChaseCooldown -= Time.deltaTime;
 
         // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
         return false;
