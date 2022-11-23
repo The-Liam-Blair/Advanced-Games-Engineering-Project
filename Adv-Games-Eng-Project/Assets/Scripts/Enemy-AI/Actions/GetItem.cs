@@ -5,6 +5,9 @@ using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
 
+/// <summary>
+/// Attempt to retrieve a found item in the level.
+/// </summary>
 public class GetItem : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
@@ -13,9 +16,9 @@ public class GetItem : GoapAction
     // Init preconditions and effects.
     public GetItem()
     {
-        addPrecondition("hasItem", false);
+        addPrecondition("hasItem", false); // Do we currently not have an item?
 
-        addEffect("hasItem", true);
+        addEffect("hasItem", true);        // Item is picked up by the enemy.
 
         actionEnabled = true;
     }

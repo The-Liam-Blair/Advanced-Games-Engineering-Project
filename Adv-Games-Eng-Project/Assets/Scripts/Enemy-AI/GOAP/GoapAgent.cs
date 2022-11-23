@@ -38,7 +38,8 @@ public sealed class GoapAgent : MonoBehaviour {
 	// Cooldown prevents enemy from attacking the player while it is above 0f. Forces enemy to stop repeatedly chasing the player.
     public float playerChaseCooldown;
 
-    public float sightingChaseCooldown;
+	// Cooldown between receiving calls from other enemies about player sightings.
+    public float playerSightingCooldown;
 
     // Value represents how aggressive the enemy should be. Higher aggressiveness = Enemy is given approximate player position with increasing accuracy as
 	// the value increases. Reduced significantly after executing a chase plan. Used to make the enemy forcefully encounter the player more often.
@@ -68,6 +69,8 @@ public sealed class GoapAgent : MonoBehaviour {
 
         playerChaseTime = 0f;
         playerChaseCooldown = 0f;
+
+        playerSightingCooldown = 0f;
 
         aggressiveness = 0;
 
@@ -287,13 +290,21 @@ public sealed class GoapAgent : MonoBehaviour {
 	}
 
 
+	/// <summary>
+	/// Receive a heard call from another enemy. Mandatory for enemy cooperation.
+	/// </summary>
+	/// <param name="caller">Enemy that made the call.</param>
+	/// <param name="target">The caller's current target.</param>
+	/// <param name="callerGoal">The caller's current goal.</param>
    public void ReceiveCall(GameObject caller, GameObject target, string callerGoal)
    {
 
-       if (callerGoal == "CHASEPLAYER" && sightingChaseCooldown < 0f)
+       if (callerGoal == "CHASEPLAYER" && playerSightingCooldown < 0f)
        {
-           sightingChaseCooldown = 5f;
-           WorldData.EditDataValue(new KeyValuePair<string, bool>("RECEIVECALL_playerSighting", true));
+           playerSightingCooldown = 10f;
+           Debug.DrawLine(transform.position, transform.position + new Vector3(0, 10f, 0),
+               Color.red, 3);
+            WorldData.EditDataValue(new KeyValuePair<string, bool>("RECEIVECALL_playerSighting", true));
            StartCoroutine(PlayerSightingExpirationCoroutine(3));
        }
    }
@@ -354,7 +365,7 @@ public sealed class GoapAgent : MonoBehaviour {
     {
         GetComponent<NavMeshAgent>().speed = 3.33f; // Apply speed debuff.
         yield return new WaitForSeconds(duration);
-        GetComponent<NavMeshAgent>().speed = 10f; // Inverse the debuff to get the normal speed again.
+        GetComponent<NavMeshAgent>().speed = 10f; // Remove debuff by returning speed to normal.
 
         yield return null;
     }
@@ -363,6 +374,8 @@ public sealed class GoapAgent : MonoBehaviour {
     {
         yield return new WaitForSeconds(expireTime);
         WorldData.EditDataValue(new KeyValuePair<string, bool>("RECEIVECALL_playerSighting", false));
+
+        yield return null;
     }
 
 }

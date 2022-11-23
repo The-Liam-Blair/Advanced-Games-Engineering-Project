@@ -4,6 +4,9 @@ using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
 
+/// <summary>
+/// Attempt to aim an item at the player, so that the item can be used afterwards for an accurate attack.
+/// </summary>
 public class AimAtPlayer : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
@@ -15,11 +18,11 @@ public class AimAtPlayer : GoapAction
     // Init preconditions and effects.
     public AimAtPlayer()
     {
-        addPrecondition("hasItem", true);
-        addPrecondition("foundPlayer", true);
-        addPrecondition("aimingAtPlayer", false);
+        addPrecondition("hasItem", true);         // Does the enemy have an item to use?
+        addPrecondition("foundPlayer", true);     // Has the player been seen?
+        addPrecondition("aimingAtPlayer", false); // Is the enemy not aiming at the player?
 
-        addEffect("aimingAtPlayer", true);
+        addEffect("aimingAtPlayer", true); // Enemy is now aiming at the player.
 
         actionEnabled = true;   
     }

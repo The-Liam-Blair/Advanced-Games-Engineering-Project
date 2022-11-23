@@ -6,6 +6,9 @@ using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
 
+/// <summary>
+/// Investigate a player sighting from another enemy, heard from their call.
+/// </summary>
 public class MoveToSighting : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
@@ -14,8 +17,9 @@ public class MoveToSighting : GoapAction
     // Init preconditions and effects.
     public MoveToSighting()
     {
-        addPrecondition("RECEIVECALL_playerSighting", true);
-        addEffect("moveToPlayerSighting", true);
+        addPrecondition("RECEIVECALL_playerSighting", true); // Has a player sighting call been heard?
+
+        addEffect("moveToPlayerSighting", true);             // Moved to the point where the call was heard.
 
         actionEnabled = true;
     }

@@ -5,6 +5,9 @@ using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
 
+/// <summary>
+/// Attempt to chase the player and attack them.
+/// </summary>
 public class ChasePlayer : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
@@ -13,11 +16,11 @@ public class ChasePlayer : GoapAction
     // Init preconditions and effects.
     public ChasePlayer()
     {
-        addPrecondition("foundPlayer", true);
-        addPrecondition("attackPlayer", false);
+        addPrecondition("foundPlayer", true);   // Has the player been seen?
+        addPrecondition("attackPlayer", false); // Is attacking the player our current goal?
 
-        addEffect("foundPlayer", false);
-        addEffect("attackPlayer", true);
+        addEffect("foundPlayer", false);        // Player has been successfully attacked, so lose the player again.
+        addEffect("attackPlayer", true);        // Goal completion confirmation. Is reset to false on successful attack for action reuse.
 
         actionEnabled = true;
     }

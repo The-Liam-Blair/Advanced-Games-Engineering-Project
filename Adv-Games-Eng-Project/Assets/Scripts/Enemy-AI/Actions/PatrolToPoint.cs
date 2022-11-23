@@ -2,9 +2,14 @@ using System;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SocialPlatforms;
+using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 
+/// <summary>
+/// Patrol to a random location. As the aggressiveness value increases, the patrol location increasingly becomes more accurate
+/// to the player's position.
+/// </summary>
 public class PatrolToPoint : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
@@ -14,9 +19,9 @@ public class PatrolToPoint : GoapAction
     public PatrolToPoint()
     {
 
-        addPrecondition("isPatrolling", false);
+        addPrecondition("isPatrolling", false); // Is the enemy not patrolling?
         
-        addEffect("isPatrolling", true);
+        addEffect("isPatrolling", true);        // Enemy has patrolled.
 
         actionEnabled = true;
     }
@@ -102,7 +107,7 @@ public class PatrolToPoint : GoapAction
             {
                 // Test if the enemy is able to reach the way point using nav mesh travel from it's current location.
                 // If the path is valid...
-                NavMesh.CalculatePath(agent.transform.position, hit.position, 1, path);
+                NavMesh.CalculatePath(agent.transform.position, hit.position, NavMesh.AllAreas, path);
                 if (path.status == NavMeshPathStatus.PathComplete)
                 {
                     // Update target position to the way point position.

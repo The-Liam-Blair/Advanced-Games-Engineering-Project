@@ -4,6 +4,9 @@ using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
 
+/// <summary>
+/// Attempt to use an item to debuff the player. Requires being aimed so that projectile attacks are accurate.
+/// </summary>
 public class UseItem : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
@@ -12,11 +15,12 @@ public class UseItem : GoapAction
     // Init preconditions and effects.
     public UseItem()
     {
-        addPrecondition("hasItem", true);
-        addPrecondition("aimingAtPlayer", true);
+        addPrecondition("hasItem", true);         // Does the enemy have an item?
+        addPrecondition("aimingAtPlayer", true);  // Is the enemy already aiming at the player?
 
-        addEffect("hasItem", false);
-        addEffect("aimingAtPlayer", false);
+        addEffect("hasItem", false);        // Item has been used.
+        addEffect("aimingAtPlayer", false); // No longer aiming at player.
+        addEffect("hasUsedItem", true);     // Item used in this action sequence.
 
         actionEnabled = true; // Action enabling may still need worked on
     }

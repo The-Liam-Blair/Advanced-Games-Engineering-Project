@@ -11,9 +11,9 @@ public class CurrentWorldKnowledge
     private enum GOALS
     {
         CHASEPLAYER,
-        PATROL,
         FINDITEM,
-        CALL_PLAYERSIGHTED
+        CALL_PLAYERSIGHTED,
+        PATROL
     };
 
     // Stores world changes as a key value pair of a fact about the world and if it's true or false.
@@ -38,27 +38,32 @@ public class CurrentWorldKnowledge
     {
         // Set initial world state to false for all facts.
         WorldData = new HashSet<KeyValuePair<string, bool>>();
-        WorldData.Add(new KeyValuePair<string, bool>("aimingAtPlayer", false));
-        WorldData.Add(new KeyValuePair<string, bool>("foundPlayer", false));
-        WorldData.Add(new KeyValuePair<string, bool>("attackPlayer", false));
 
-        WorldData.Add(new KeyValuePair<string, bool>("isPatrolling", false));
 
-        WorldData.Add(new KeyValuePair<string, bool>("hasItem", false));
+        WorldData.Add(new KeyValuePair<string, bool>("foundPlayer", false));  // Has the player been sighted?
+        WorldData.Add(new KeyValuePair<string, bool>("attackPlayer", false)); // Is the CHASEPLAYER goal being pursued?
 
-        WorldData.Add(new KeyValuePair<string, bool>("RECEIVECALL_playerSighting", false));
-        WorldData.Add(new KeyValuePair<string, bool>("moveToPlayerSighting", false));
+        WorldData.Add(new KeyValuePair<string, bool>("aimingAtPlayer", false)); // Aiming (item) at player?
+        WorldData.Add(new KeyValuePair<string, bool>("hasItem", false));        // Does the enemy have an item?
+        WorldData.Add(new KeyValuePair<string, bool>("hasUsedItem", false));    // Did the enemy use an item in this current action sequence?
+
+        WorldData.Add(new KeyValuePair<string, bool>("RECEIVECALL_playerSighting", false)); // Did the enemy hear a player sighted call from another enemy?
+        WorldData.Add(new KeyValuePair<string, bool>("moveToPlayerSighting", false));       // Is the enemy investigating a heard player sighting?
+
+        WorldData.Add(new KeyValuePair<string, bool>("isPatrolling", false)); // Is the enemy currently patrolling?
+
 
 
         // Set list of all possible goals to choose from, and a placeholder insistence value of -1.
         Goals = new List<Tuple<string, bool, int>>();
-        Goals.Add(new Tuple<string, bool, int>("attackPlayer", true, -1));
-        Goals.Add(new Tuple<string, bool, int>("isPatrolling", true, -1));
-        Goals.Add(new Tuple<string, bool, int>("hasItem", true, -1));
-        Goals.Add(new Tuple<string, bool, int>("moveToPlayerSighting", true, -1));
+
+        Goals.Add(new Tuple<string, bool, int>("attackPlayer", true, -1));         // Move to the player and attack them.
+        Goals.Add(new Tuple<string, bool, int>("hasItem", true, -1));              // Acquire a seen item.
+        Goals.Add(new Tuple<string, bool, int>("moveToPlayerSighting", true, -1)); // Investigate a player sighting called from another enemy.
+        Goals.Add(new Tuple<string, bool, int>("isPatrolling", true, -1));         // Default goal if no other is picked: Patrol w.r.t aggressiveness.
+
 
         ItemLocations = new List<GameObject>();
-        PlayerProjectiles = new List<GameObject>();
     }
 
     /// <summary>
@@ -90,15 +95,6 @@ public class CurrentWorldKnowledge
                 ItemLocations.RemoveAt(i);
             }
         }
-    }
-
-    /// <summary>
-    /// Add a fact to the knowledge list.
-    /// </summary>
-    /// <param name="data">New data fact to add.</param>
-    public void AddData(KeyValuePair<string, bool> data)
-    {
-        WorldData.Add(data);
     }
 
     /// <summary>
@@ -163,14 +159,6 @@ public class CurrentWorldKnowledge
         // Fact string not found in knowledge base: Create a new fact with it's state set to false.
         WorldData.Add(new KeyValuePair<string, bool>(fact, false));
         return false;
-    }
-
-    /// <summary>
-    /// Removes all facts from the knowledge base.
-    /// </summary>
-    public void ClearData()
-    {
-        WorldData.Clear();
     }
 
     /// <summary>
@@ -263,7 +251,7 @@ public class CurrentWorldKnowledge
                         if (goals.Item1 == "isPatrolling") { continue; }
                         if (goals.Item3 < minInsistence) { minInsistence = goals.Item3; } // Item 3 - Insistence value of goal.
                     }
-                    if (minInsistence <= 1) { Insistence += 10; }
+                    if (minInsistence <= 1) { Insistence += 13; }
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
             }

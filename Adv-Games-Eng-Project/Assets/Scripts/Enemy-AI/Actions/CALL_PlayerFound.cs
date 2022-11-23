@@ -6,6 +6,9 @@ using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
 
+/// <summary>
+/// After seeing the enemy and using an item on the player, call to nearby enemies that the player is nearby so that they may assist this enemy.
+/// </summary>
 public class CALL_PlayerFound : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
@@ -16,7 +19,10 @@ public class CALL_PlayerFound : GoapAction
     // Init preconditions and effects.
     public CALL_PlayerFound()
     {
-        addPrecondition("foundPlayer", true);
+        addPrecondition("foundPlayer", true); // Has the enemy found the player?
+        addPrecondition("hasUsedItem", true); // Has the enemy used an item in this action sequence?
+
+        addEffect("hasUsedItem", false); // No actual world state change from calling other enemies but resets the used item state for reuse.
 
         actionEnabled = true;
     }
@@ -57,21 +63,23 @@ public class CALL_PlayerFound : GoapAction
         if (startTime == 0) { startTime = Time.time; }
         if (Time.time - startTime > 2)
         {
+            agent.GetComponent<NavMeshAgent>().speed = 10f;
             done = true;
 
             GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
 
             foreach (GameObject enemy in enemies)
             {
-                if (Vector3.Distance(agent.transform.position, enemy.transform.position) <= 40 && agent != enemy)
+                if (Vector3.Distance(agent.transform.position, enemy.transform.position) <= 20 && agent != enemy)
                 {
                     Debug.DrawLine(agent.transform.position + Vector3.up, enemy.transform.position + Vector3.up,
                         Color.white, 3);
                     enemy.GetComponent<GoapAgent>().ReceiveCall(agent, target, "CHASEPLAYER");
                 }
             }
+
+            UpdateWorldState();
         }
-        agent.GetComponent<NavMeshAgent>().speed = 11f;
         return true;
     }
 }

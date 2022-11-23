@@ -249,8 +249,6 @@ public class GoalCreation : MonoBehaviour, IGoap
         GetComponent<GoapAgent>().aggressiveness += 4 * Time.deltaTime;
         if (GetComponent<GoapAgent>().aggressiveness >= 100f) { GetComponent<GoapAgent>().aggressiveness = 100f; }
 
-        GetComponent<GoapAgent>().sightingChaseCooldown -= Time.deltaTime;
-
         // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
         return false;
 	}
