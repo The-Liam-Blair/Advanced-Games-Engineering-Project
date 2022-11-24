@@ -56,7 +56,7 @@ public class MoveToSighting : GoapAction
 
         NavMeshPath path = new NavMeshPath();
 
-        NavMesh.CalculatePath(agent.transform.position, target.transform.position, 1, path);
+        NavMesh.CalculatePath(agent.transform.position, target.transform.position, NavMesh.AllAreas, path);
         if (path.status == NavMeshPathStatus.PathComplete)
         {
             // Get the path distance.
@@ -64,6 +64,7 @@ public class MoveToSighting : GoapAction
 
             // Calculate movement cost from distance / speed.
             cost = pathDist / nmAgent.speed;
+
         }
 
         return true;

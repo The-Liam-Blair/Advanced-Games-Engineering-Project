@@ -58,7 +58,7 @@ public class ChasePlayer : GoapAction
 
         // Calculate path sample, store inside path variable.
         NavMeshPath path = new NavMeshPath();
-        NavMesh.CalculatePath(agent.transform.position, target.transform.position, 1, path);
+        NavMesh.CalculatePath(agent.transform.position, target.transform.position, NavMesh.AllAreas, path);
 
         // If the path is valid...
         if (path.status == NavMeshPathStatus.PathComplete)

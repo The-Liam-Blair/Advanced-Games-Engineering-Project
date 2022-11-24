@@ -127,7 +127,7 @@ public class GoalCreation : MonoBehaviour, IGoap
 
         // Perform a distance check between enemy agent and action's associated location. If this evaluates to true, destroy the nav mesh path
         // and return true (agent is at action location). Otherwise, return false (agent needs to keep moving).
-        if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 1f)
+        if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 1.5f)
         {
             nextAction.setInRange(true);
             nextAction.gameObject.GetComponent<NavMeshAgent>().ResetPath();

@@ -58,7 +58,7 @@ public class GetItem : GoapAction
                 {
                     target = item;
                     closestItemDist = Vector3.Distance(agent.transform.position, item.transform.position);
-                    cost = closestItemDist; // todo fix cost cancelling this action early
+                    cost = closestItemDist;
                 }
             }
             return true;
@@ -69,18 +69,9 @@ public class GetItem : GoapAction
     // Implementation of the action itself, does not include movement: Only the action AFTER arriving to the correct location.
     public override bool perform(GameObject agent)
     {
-        // Quick fix currently for item retrieval cancelling early constantly for whatever reason.
-        // Will be properly fixed later and cancelling re-enabled.
-        //if (!base.perform(agent))
-        //{
-        //    return false; 
-
-        //};
-
         gotItem = true;
-
         UpdateWorldState();
-
+        
         return true;
     }
 }

@@ -56,8 +56,7 @@ public class PatrolToPoint : GoapAction
         {
             target = GameObject.Find("_WAYPOINT" + Int32.Parse(GetComponent<GoapAgent>().name));
         }
-
-
+        
         // Get cost from time to target (distance / speed) Speed is constant so acceleration isn't calculated.
         // Since path to target isn't created yet, one must be sampled (but not exactly instantiated) to test for distance.
         NavMeshAgent nmAgent = agent.GetComponent<NavMeshAgent>();
@@ -85,25 +84,28 @@ public class PatrolToPoint : GoapAction
             if (aggressiveness <= 29)
             {
                 randWalkPoint = new Vector3(Random.Range(-30f, 30f), 1, Random.Range(-30f, 30f));
-            }
+            }    
+            
+            // Medium aggressiveness: Player's position is supplied with 20 units of noise on the x and z axes.
             else if (aggressiveness > 30 && aggressiveness <= 59)
             {
-                // Medium aggressiveness: Player's position is supplied with 20 units of noise on the x and z axes.
-                randWalkPoint = playerPos + new Vector3(Random.Range(-20f, 20f), 1, Random.Range(-20f, 20f));
-            }
-            else if (aggressiveness > 60 && aggressiveness <= 89)
-            {
-                // High aggressiveness: Player's position is supplied with 10 units of noise on the x and z axes (More accurate than medium).
                 randWalkPoint = playerPos + new Vector3(Random.Range(-10f, 10f), 1, Random.Range(-10f, 10f));
             }
+            
+            // High aggressiveness: Player's position is supplied with 5 units of noise on the x and z axes (More accurate than medium).
+            else if (aggressiveness > 60 && aggressiveness <= 89)
+            {
+                randWalkPoint = playerPos + new Vector3(Random.Range(-2.5f, 2.5f), 1, Random.Range(-2.5f, 2.5f));
+            }
+            
+            // Extreme aggressiveness: Player's position is supplied with no noise (Most accurate).
             else
             {
-                // Extreme aggressiveness: Player's position is supplied with no noise (Most accurate).
                 randWalkPoint = playerPos;
             }
 
             // Attempt to find a suitable point on the nav mesh that's closest to or at the randomPoint position.
-            if (NavMesh.SamplePosition(randWalkPoint, out NavMeshHit hit, Vector3.Distance(agent.transform.position, randWalkPoint), 1))
+            if (NavMesh.SamplePosition(randWalkPoint, out NavMeshHit hit, Vector3.Distance(agent.transform.position, randWalkPoint), NavMesh.AllAreas))
             {
                 // Test if the enemy is able to reach the way point using nav mesh travel from it's current location.
                 // If the path is valid...
@@ -126,6 +128,7 @@ public class PatrolToPoint : GoapAction
         }
 
         // Only runs if a path isn't found, which shouldn't happen.
+        Debug.Log("Enemy couldn't find a patrol path? Thanks shite code :)");
         return false;
     }
 

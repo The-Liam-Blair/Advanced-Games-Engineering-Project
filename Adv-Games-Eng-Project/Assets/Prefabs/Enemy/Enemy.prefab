@@ -145,6 +145,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff2731e1dbe169540a292ae258526d33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerChaseTime: 0
+  playerChaseCooldown: 0
+  playerSightingCooldown: 0
   aggressiveness: 0
 --- !u!114 &7469525511178287231
 MonoBehaviour:
@@ -292,7 +295,7 @@ NavMeshAgent:
   m_AutoRepath: 1
   m_Height: 1
   m_BaseOffset: 0.5
-  m_WalkableMask: 1
+  m_WalkableMask: 1016
   m_ObstacleAvoidanceType: 0
 --- !u!54 &7469525511178287229
 Rigidbody:

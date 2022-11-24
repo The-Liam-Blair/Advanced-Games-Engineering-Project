@@ -122,7 +122,7 @@ public class GameManager : MonoBehaviour
 
         // Init enemy objects list with 1 enemy with respective way point.
         waypointObjects.Add(Instantiate(wayPointPrefab, Vector3.zero, Quaternion.identity));
-        enemyObjects.Add(Instantiate(enemyPrefab, new Vector3(0, 0, 0), Quaternion.identity));
+        enemyObjects.Add(Instantiate(enemyPrefab, new Vector3(0, 0.5f, 0), Quaternion.identity));
 
         waypointObjects[0].name = "_WAYPOINT0";
         waypointObjects[0].transform.parent = GameObject.Find("WAYPOINTS").transform;
@@ -319,7 +319,7 @@ public class GameManager : MonoBehaviour
         Vector3 pos = Vector3.zero;
 
         // Get the nav mesh bounds, which is the entire walkable area.
-        Bounds NavMeshBounds = GameObject.Find("Walkable").GetComponent<MeshRenderer>().bounds;
+        Bounds NavMeshBounds = GameObject.Find("Walkable_Bounds").GetComponent<MeshRenderer>().bounds;
 
         NavMeshPath path = new NavMeshPath();
 
@@ -332,7 +332,7 @@ public class GameManager : MonoBehaviour
             pos = new Vector3(Random.Range(NavMeshBounds.min.x, NavMeshBounds.max.x), 1.1f, Random.Range(NavMeshBounds.min.z, NavMeshBounds.max.z));
 
             // If this position is within 1 unit of a nearby nav mesh point...
-            if (NavMesh.SamplePosition(pos, out NavMeshHit navMeshPos, 3f, 1))
+            if (NavMesh.SamplePosition(pos, out NavMeshHit navMeshPos, 3f, NavMesh.AllAreas))
             {
                 // Fetch the closest nav mesh point to the original position and test if a path can be made to it from origin (Origin lies on the nav mesh path).
                 // If a valid path is found...
@@ -345,6 +345,7 @@ public class GameManager : MonoBehaviour
 
         }
         // Algorithm should not bail and reach this return statement.
+        Debug.Log("Unable to find valid position");
         return pos;
     }
 

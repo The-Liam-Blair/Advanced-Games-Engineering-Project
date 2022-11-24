@@ -1,7 +1,9 @@
 using System;
 using System.Numerics;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
+using Quaternion = UnityEngine.Quaternion;
 using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
@@ -15,7 +17,7 @@ public class CALL_PlayerFound : GoapAction
     private bool done;
 
     private float startTime;
-
+    
     // Init preconditions and effects.
     public CALL_PlayerFound()
     {
@@ -59,13 +61,19 @@ public class CALL_PlayerFound : GoapAction
     // Implementation of the action itself, does not include movement: Only the action AFTER arriving to the correct location.
     public override bool perform(GameObject agent)
     {
-        agent.GetComponent<NavMeshAgent>().speed = 0f;
-        if (startTime == 0) { startTime = Time.time; }
+        agent.GetComponent<NavMeshAgent>().speed = 0f; // Enemy stops moving while preparing to call other enemies.
+        
+        
+        if (startTime == 0) { startTime = Time.time; } // Record time taken: 2 seconds wait then do the call.
+
+        // When the 2 seconds have passed, call other enemies.
         if (Time.time - startTime > 2)
         {
             agent.GetComponent<NavMeshAgent>().speed = 10f;
+            
             done = true;
 
+            // Find all nearby enemies. If any are nearby, call the relevant function that handles receiving calls. Pass in the player position and the goal of chasing the player.
             GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
 
             foreach (GameObject enemy in enemies)
@@ -77,7 +85,6 @@ public class CALL_PlayerFound : GoapAction
                     enemy.GetComponent<GoapAgent>().ReceiveCall(agent, target, "CHASEPLAYER");
                 }
             }
-
             UpdateWorldState();
         }
         return true;
