@@ -23,9 +23,14 @@ public class GoalCreation : MonoBehaviour, IGoap
     // Reference to the agent's world data.
     public CurrentWorldKnowledge WorldData;
 
+    // Reference to the rebaker script stored on the nav meshes object, which controls the (re)baking of nav meshes. Used to tell the AI
+    // to wait to test a path if a nav mesh is currently being built.
+    private ReBake NavMeshBaker;
+
     void Start()
     {
         WorldData = GetComponent<GoapAgent>().getWorldData();
+        NavMeshBaker = GameObject.Find("NAV_MESHES").GetComponent<ReBake>();
     }
 
     /**
@@ -96,6 +101,7 @@ public class GoalCreation : MonoBehaviour, IGoap
     /// <returns>True if the agent arrived at the action location or the action was bailed. False if the agent hasn't arrived at the action location yet.</returns>
     public bool moveAgent(GoapAction nextAction)
     {
+
         /////////////////////////////////
         // -- CHECK GOAL INSISTENCE -- //
         /////////////////////////////////
@@ -111,27 +117,36 @@ public class GoalCreation : MonoBehaviour, IGoap
             return true;
         }
 
-        
+
         /////////////////////////////////
         //// -- UPDATE AGENT PATH -- ////
         /////////////////////////////////
 
+        // Spin until nav mesh is built.
+        while (NavMeshBaker.ISNAVMESHBUILDING) {}
+
         // Update + set enemy agent's nav mesh destination. to be the action's associated location.
-        gameObject.GetComponent<NavMeshAgent>().destination = nextAction.target.transform.position;
-        nextAction.GetPathLength(gameObject.GetComponent<NavMeshAgent>().path);
-        
-        
+        if (nextAction.target.tag == "Player")
+        {
+            gameObject.GetComponent<NavMeshAgent>().destination = nextAction.target.transform.position;
+        }
+
         ///////////////////////////////////
         //// -- CHECK MOVEMENT COST -- ////
         ///////////////////////////////////
 
         // Perform a distance check between enemy agent and action's associated location. If this evaluates to true, destroy the nav mesh path
         // and return true (agent is at action location). Otherwise, return false (agent needs to keep moving).
-        if ((gameObject.transform.position - nextAction.target.transform.position).magnitude < 1.5f)
+        if (Vector3.Distance(gameObject.transform.position, nextAction.target.transform.position) < 1f)
         {
             nextAction.setInRange(true);
             nextAction.gameObject.GetComponent<NavMeshAgent>().ResetPath();
             return true;
+        }
+
+        if (gameObject.GetComponent<NavMeshAgent>().velocity == Vector3.zero)
+        {
+            gameObject.GetComponent<NavMeshAgent>().destination = nextAction.target.transform.position;
         }
 
         // Update current movement cost of this action. Value is halved to scale it approximately to the pre-calculated cost of the action.

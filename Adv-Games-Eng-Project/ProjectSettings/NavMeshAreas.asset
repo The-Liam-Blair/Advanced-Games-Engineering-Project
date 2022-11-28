@@ -6,25 +6,25 @@ NavMeshProjectSettings:
   serializedVersion: 2
   areas:
   - name: Walkable
-    cost: 0
+    cost: 1
   - name: Not Walkable
     cost: 1
   - name: Jump
-    cost: 0
+    cost: 1
   - name: ZERO_AGENT
     cost: 1
   - name: ONE_AGENT
-    cost: 2
-  - name: TWO_AGENT
     cost: 4
+  - name: TWO_AGENT
+    cost: 12
   - name: THREE_AGENT
-    cost: 8
+    cost: 36
   - name: FOUR_AGENT
-    cost: 16
+    cost: 108
   - name: FIVE_AGENT
-    cost: 32
+    cost: 324
   - name: SIX_AGENT
-    cost: 64
+    cost: 972
   - name: 
     cost: 1
   - name: 

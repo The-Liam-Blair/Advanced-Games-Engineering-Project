@@ -30,6 +30,9 @@ public abstract class GoapAction : MonoBehaviour {
 
     protected bool actionEnabled;
 
+    // Checks if the prePerform function has ran for the state machine to check.
+    public bool hasPrePerformRun;
+
     // Representation of an enemy's understanding of a given item or game mechanic.
     // Knowledge is gained from being hurt by the item. todo: maybe from seeing the item in use as well?
     // If knowledge >= 100 : Enemy will be able to utilise that item or game mechanic against the player.
@@ -42,11 +45,15 @@ public abstract class GoapAction : MonoBehaviour {
     // Reference to the agent's world knowledge.
     public CurrentWorldKnowledge WorldData;
 
+    // Reference to the nav mesh baker script
+    public static ReBake NavMeshBaker;
+
     void Start()
     {
         WorldData = GetComponent<GoapAgent>().getWorldData();
         _name = GetType().FullName;
-
+        NavMeshBaker = GameObject.Find("NAV_MESHES").GetComponent<ReBake>();
+        hasPrePerformRun = true; // Actions that don't implement the prePerform function has this set to true. Functions that implement this set it to false initially.
     }
 
     public GoapAction() {
@@ -100,6 +107,11 @@ public abstract class GoapAction : MonoBehaviour {
     {
         return !currentCostTooHigh;
     }
+
+    /// <summary>
+    /// Not implemented by all actions, a once-run function to setup up variables and perform calculations that need to be done before the action is next started.
+    /// </summary>
+    public virtual void prePerform() {}
 
 
     /// <summary>
@@ -201,6 +213,35 @@ public abstract class GoapAction : MonoBehaviour {
             pathLength += Vector3.Distance(path.corners[i - 1], path.corners[i]);
         }
         return pathLength;
+    }
+
+    /// <summary>
+    /// When a valid, complete path is determined, update each used nav mesh modifier (surface)'s area value.
+    /// This area value dictates how many agents are/about to be using those surfaces, and so the selected surfaces become more expensive to use
+    /// by other agents, encouraging other agents to take other paths which may have a lower cost.
+    /// </summary>
+    /// <param name="path">The validated, complete agent path.</param>
+    protected void UpdateNavAreas(NavMeshPath path)
+    {
+        List<NavMeshModifier> surfaces = new List<NavMeshModifier>();
+        RaycastHit hit;
+
+        // For each corner waypoint in the path...
+        foreach (Vector3 corner in path.corners)
+        {
+            // The raycast will hit the nav mesh surface the waypoint is on (Always evaluates to true).
+            // If this surface hasn't been recorded on the surfaces list, add it.
+            if (Physics.Raycast(corner + (Vector3.up * 0.5f), Vector3.down, out hit, 1f))
+            {
+                if (!surfaces.Contains(hit.transform.gameObject.GetComponent<NavMeshModifier>()))
+                {
+                    surfaces.Add(hit.transform.gameObject.GetComponent<NavMeshModifier>());
+                }
+            }
+        }
+
+        // For each surface the waypoints lie on, increment their surface area to increase the cost of traveling through this area.
+        NavMeshBaker.IncrementSurfaceArea(surfaces);
     }
 
     /// <summary>

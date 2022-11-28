@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.AI;
 using Random = UnityEngine.Random;
@@ -12,6 +13,8 @@ public class GetItem : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
     private bool gotItem;
+
+    private NavMeshPath path;
 
     // Init preconditions and effects.
     public GetItem()
@@ -30,6 +33,8 @@ public class GetItem : GoapAction
         gotItem = false;
         cost = 1f;
         target = null;
+        path = null;
+        hasPrePerformRun = false;
     }
 
     // Check if the action has been completed.
@@ -47,6 +52,7 @@ public class GetItem : GoapAction
     // Checks if the action can be run
     public override bool checkProceduralPrecondition(GameObject agent)
     {
+        path = new NavMeshPath();
         // If the enemy has seen at least 1 item...
         if (GetComponent<GoapAgent>().getWorldData().ItemLocations.Count > 0)
         {
@@ -61,9 +67,21 @@ public class GetItem : GoapAction
                     cost = closestItemDist;
                 }
             }
+            
+            // If a nav mesh is being rebuilt, spin until it's built.
+            while (NavMeshBaker.ISNAVMESHBUILDING) {}
+            NavMesh.CalculatePath(agent.transform.position, target.transform.position, NavMesh.AllAreas, path);
+
             return true;
         }
         return false;
+    }
+
+    public override void prePerform()
+    {
+        GetComponent<NavMeshAgent>().SetPath(path);
+
+        hasPrePerformRun = true;
     }
 
     // Implementation of the action itself, does not include movement: Only the action AFTER arriving to the correct location.

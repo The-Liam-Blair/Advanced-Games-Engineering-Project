@@ -224,7 +224,7 @@ public class CurrentWorldKnowledge
                 // at true. Otherwise, other goals will always be chosen due to a higher starting insistence value of 0.
                 case GOALS.CHASEPLAYER:
                     Insistence = -1;
-                    if (playerFound) { Insistence += 100; }
+                    if (playerFound) { Insistence = 100; }
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
 
@@ -238,20 +238,20 @@ public class CurrentWorldKnowledge
 
                 case GOALS.CALL_PLAYERSIGHTED:
                     Insistence = -1;
-                    if(GetFactState("RECEIVECALL_playerSighting", true)) { Insistence = 90; }
+                    if(GetFactState("RECEIVECALL_playerSighting", true)) { Insistence = 100; }
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
 
                 // Patrol goal can only be chosen if no other goal has an insistence value of 1 or higher. Essentially, this
                 // means that it's only chosen if no other better goal can be found at this time.
                 case GOALS.PATROL:
-                    int minInsistence = Int32.MaxValue;
+                    int maxInsistence = Int32.MinValue;
                     foreach (var goals in Goals)
                     {
                         if (goals.Item1 == "isPatrolling") { continue; }
-                        if (goals.Item3 < minInsistence) { minInsistence = goals.Item3; } // Item 3 - Insistence value of goal.
+                        if (goals.Item3 > maxInsistence) { maxInsistence = goals.Item3; } // Item 3 - Insistence value of goal.
                     }
-                    if (minInsistence <= 1) { Insistence += 13; }
+                    if (maxInsistence <= 1) { Insistence = 10; }
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
             }

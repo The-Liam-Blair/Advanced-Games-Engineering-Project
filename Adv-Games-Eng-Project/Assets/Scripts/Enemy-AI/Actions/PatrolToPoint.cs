@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SocialPlatforms;
@@ -14,6 +16,8 @@ public class PatrolToPoint : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
     private bool reachedWaypoint;
+
+    private NavMeshPath path;
 
     // Init preconditions and effects.
     public PatrolToPoint()
@@ -32,6 +36,9 @@ public class PatrolToPoint : GoapAction
     {
         reachedWaypoint = false;
         cost = 1f;
+        path = null;
+                hasPrePerformRun = false;
+
     }
 
     // Check if the action has been completed.
@@ -56,13 +63,18 @@ public class PatrolToPoint : GoapAction
         {
             target = GameObject.Find("_WAYPOINT" + Int32.Parse(GetComponent<GoapAgent>().name));
         }
+
+        if (NavMeshBaker == null)
+        {
+            NavMeshBaker = GameObject.Find("NAV_MESHES").GetComponent<ReBake>();
+        }
         
         // Get cost from time to target (distance / speed) Speed is constant so acceleration isn't calculated.
         // Since path to target isn't created yet, one must be sampled (but not exactly instantiated) to test for distance.
         NavMeshAgent nmAgent = agent.GetComponent<NavMeshAgent>();
 
         // Calculate path sample, store inside path variable.
-        NavMeshPath path = new NavMeshPath();
+        NavMeshPath _path = new NavMeshPath();
 
         Vector3 randWalkPoint = Vector3.zero;
 
@@ -73,7 +85,7 @@ public class PatrolToPoint : GoapAction
         int tries = 0;
 
         // Runs until a suitable path is found or run out of tries (Which should be in the first iteration due to how SamplePosition works, but good to be safe).
-        while (tries < 20)
+        while (tries < 100)
         {
             tries++;
 
@@ -104,32 +116,46 @@ public class PatrolToPoint : GoapAction
                 randWalkPoint = playerPos;
             }
 
+            // If a nav mesh is being rebuilt, spin until it's built.
+            while (NavMeshBaker.ISNAVMESHBUILDING) {}
+
             // Attempt to find a suitable point on the nav mesh that's closest to or at the randomPoint position.
             if (NavMesh.SamplePosition(randWalkPoint, out NavMeshHit hit, Vector3.Distance(agent.transform.position, randWalkPoint), NavMesh.AllAreas))
             {
                 // Test if the enemy is able to reach the way point using nav mesh travel from it's current location.
                 // If the path is valid...
-                NavMesh.CalculatePath(agent.transform.position, hit.position, NavMesh.AllAreas, path);
-                if (path.status == NavMeshPathStatus.PathComplete)
+                NavMesh.CalculatePath(agent.transform.position, hit.position, NavMesh.AllAreas, _path);
+                if (_path.status == NavMeshPathStatus.PathComplete)
                 {
                     // Update target position to the way point position.
                     target.transform.position = hit.position;
 
                     // Get the path distance.
-                    float pathDist = GetPathLength(path);
+                    float pathDist = GetPathLength(_path);
 
                     // Calculate movement cost from distance / speed.
                     cost = pathDist / nmAgent.speed;
+
+                    path = _path;
 
                     // Path found, so this action is valid for the plan in it's current stage.
                     return true;
                 }
             }
         }
+        
+        
 
         // Only runs if a path isn't found, which shouldn't happen.
-        Debug.Log("Enemy couldn't find a patrol path? Thanks shite code :)");
         return false;
+    }
+
+    public override void prePerform()
+    {
+        GetComponent<NavMeshAgent>().path = path;
+
+        hasPrePerformRun = true;
+
     }
 
     // Implementation of the action itself, does not include movement: Only the action AFTER arriving to the correct location.

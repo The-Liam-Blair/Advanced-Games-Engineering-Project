@@ -6,14 +6,16 @@ TagManager:
   tags:
   - Item
   - Enemy
+  - NAV_MESH_SURFACE
+  - Wall
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - NavMesh
   - Water
   - UI
-  - 
+  - Enemy
   - 
   - 
   - 

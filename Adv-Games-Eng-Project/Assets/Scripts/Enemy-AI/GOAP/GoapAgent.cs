@@ -145,10 +145,10 @@ public sealed class GoapAgent : MonoBehaviour {
 	/// </summary>
 	private void createIdleState() {
 		idleState = (fsm, gameObj) => {
-			// GOAP planning
-
-			// get the world state and the goal we want to plan for
-			HashSet<KeyValuePair<string,bool>> worldState = dataProvider.getWorldState();
+            // GOAP planning
+            
+            // get the world state and the goal we want to plan for
+            HashSet<KeyValuePair<string,bool>> worldState = dataProvider.getWorldState();
 			HashSet<KeyValuePair<string,bool>> goal = dataProvider.createGoalState();
 
             // Plan
@@ -190,6 +190,13 @@ public sealed class GoapAgent : MonoBehaviour {
 				return;
 			}
 
+            // If action hasn't run it's pre-Perform method, run it.
+            // Actions that don't define this method will return true by default, skipping it.
+            if (!action.hasPrePerformRun)
+            {
+				action.prePerform();
+            }
+
 			// get the agent to move itself
 			if ( dataProvider.moveAgent(action) ) {
 				fsm.popState();
@@ -219,7 +226,8 @@ public sealed class GoapAgent : MonoBehaviour {
                 
                 // the action is done. Remove it so we can perform the next one
                 currentActions.Dequeue();
-			}
+                gameObject.GetComponent<NavMeshAgent>().destination = Vector3.zero;
+            }
 
 			if (hasActionPlan()) {
 				// perform the next action
@@ -299,13 +307,13 @@ public sealed class GoapAgent : MonoBehaviour {
    public void ReceiveCall(GameObject caller, GameObject target, string callerGoal)
    {
 
-       if (callerGoal == "CHASEPLAYER" && playerSightingCooldown < 0f)
+       if (callerGoal.Equals("CHASEPLAYER")/* && playerSightingCooldown < 0f*/)
        {
            playerSightingCooldown = 10f;
            Debug.DrawLine(transform.position, transform.position + new Vector3(0, 10f, 0),
                Color.red, 3);
             WorldData.EditDataValue(new KeyValuePair<string, bool>("RECEIVECALL_playerSighting", true));
-           StartCoroutine(PlayerSightingExpirationCoroutine(3));
+           StartCoroutine(PlayerSightingExpirationCoroutine(5));
        }
    }
 

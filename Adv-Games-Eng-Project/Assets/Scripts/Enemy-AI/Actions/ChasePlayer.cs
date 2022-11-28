@@ -49,12 +49,21 @@ public class ChasePlayer : GoapAction
     // Checks if the action can be run
     public override bool checkProceduralPrecondition(GameObject agent)
     {
+
+        if (NavMeshBaker == null)
+        {
+            NavMeshBaker = GameObject.Find("NAV_MESHES").GetComponent<ReBake>();
+        }
+
         // Right now player position is always known, will be updated later to be predicted.
         target = GameObject.Find("Player");
 
         // Get cost from time to target (distance / speed) Speed is constant so acceleration isn't calculated.
         // Since path to target isn't created yet, one must be sampled (but not exactly instantiated) to test for distance.
         NavMeshAgent nmAgent = agent.GetComponent<NavMeshAgent>();
+
+        // If a nav mesh is being rebuilt, spin until it's built.
+        while (NavMeshBaker.ISNAVMESHBUILDING) { Debug.Log("WAITING... CHASE"); }
 
         // Calculate path sample, store inside path variable.
         NavMeshPath path = new NavMeshPath();
