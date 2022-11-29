@@ -2,8 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.SearchService;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Handles all player inputs.
@@ -117,6 +119,21 @@ public class PlayerControl : MonoBehaviour
     }
 
     /// <summary>
+    /// Blind the player for a given duration. Blind massively reduces sight for the player.
+    /// </summary>
+    /// <param name="duration"></param>
+    public void Blind(int duration)
+    {
+        // TODO: DEBUG CODE: REMOVE FROM RELEASE
+        // Only blind works in the lighting test scene.
+        if (SceneManager.GetActiveScene().name == "Multi-agent-Test")
+        {
+            return;
+        }
+        StartCoroutine(BlindCoroutine(duration));
+    }
+
+    /// <summary>
     /// Stun the player for a given duration
     /// </summary>
     /// <param name="duration">Length of the stun in seconds.</param>
@@ -138,6 +155,15 @@ public class PlayerControl : MonoBehaviour
         speedMultiplier = 0.33f; // Reduce multiplier by 2/3's for movement slowness.
         yield return new WaitForSeconds(duration);
         speedMultiplier = 1f; // Return multiplier back to 1 for normal speed.
+
+        yield return null;
+    }
+
+    IEnumerator BlindCoroutine(int duration)
+    {
+        GameObject.Find("Spot Light").SetActive(false);
+        yield return new WaitForSeconds(duration);
+        GameObject.Find("Spot Light").SetActive(true);
 
         yield return null;
     }

@@ -77,7 +77,7 @@ public class AimAtPlayer : GoapAction
         // Aiming angle difference is <5 degrees, so able to fire the projectile at the player.
         if (Vector3.Angle(target.transform.position - agent.transform.position, agent.transform.forward) < 5f)
         {
-            agent.GetComponent<NavMeshAgent>().speed = 11f;
+            agent.GetComponent<NavMeshAgent>().speed = 9f;
             isAiming = true;
             UpdateWorldState();
         }

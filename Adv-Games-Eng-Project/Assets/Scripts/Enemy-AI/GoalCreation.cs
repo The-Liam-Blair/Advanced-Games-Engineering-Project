@@ -197,15 +197,12 @@ public class GoalCreation : MonoBehaviour, IGoap
             if (i >= -2 && i <= 2)
             {
                 // Inner sight: Can fire projectiles at the player at this viewing angle.
-                Debug.DrawLine(transform.position,
-                    transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 12f, Color.black);
+                //Debug.DrawLine(transform.position,transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 12f, Color.black);
             }
             else
             {
                 // Outer sight: Needs to rotate first before it can accurately fire a projectile.
-                Debug.DrawLine(transform.position,
-                    transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 12f,
-                    Color.red);
+                //Debug.DrawLine(transform.position, transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 12f, Color.red);
             }
 
             // Draw 10 raycasts from the enemy in a fan - like shape. Each ray will travel for 5 units in their respective directions and then

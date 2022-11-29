@@ -59,8 +59,12 @@ public class GameManager : MonoBehaviour
     // Current action list (Actions in a plan that have been completed will be removed and updated in the UI).
     private Text AcOutput;
 
-    // Camera
+    // Current player-held item output.
+    private Text P_ItemOut;
+
+    // Cameras- Enemy and player.
    [SerializeField] private GameObject cam;
+   [SerializeField] private GameObject playerCam;
 
    // 'Pointer' like value thats used to determine which enemy is currently being viewed on the enemy camera.
     private int viewEnemy;
@@ -77,6 +81,11 @@ public class GameManager : MonoBehaviour
         IOutput = GameObject.Find("IOutput").GetComponent<Text>();
         AOutput = GameObject.Find("AOutput").GetComponent<Text>();
         AcOutput = GameObject.Find("AcOutput").GetComponent<Text>();
+
+       P_ItemOut = GameObject.Find("itemHeld").GetComponent<Text>();
+
+        playerCam.SetActive(false);
+        cam.SetActive(true);
 
 
         // Init item pickups
@@ -147,8 +156,8 @@ public class GameManager : MonoBehaviour
         }
 
         // Handle inputs to swap between enemies on the enemy camera.
-        // Checks if the sleep cooldown has ended, and is set to 0.33 after a successful camera switch.
-        // So unable to swap camera for 0.1 seconds after previous swap to prevent multiple inputs from 1 button press.
+        // Checks if the sleep cooldown has ended, and is set to 0.2 after a successful camera switch.
+        // So unable to swap camera for 0.2 seconds after previous swap to prevent multiple inputs from 1 button press.
         if (inputSleep < 0)
         {
             if (Input.GetAxisRaw("NextCam") > 0)
@@ -159,47 +168,64 @@ public class GameManager : MonoBehaviour
             {
                 viewEnemy--;
             }
-            inputSleep = 0.1f;
+            else if (Input.GetAxisRaw("SwapActiveCam") > 0)
+            {
+                cam.SetActive(!cam.activeSelf);
+                playerCam.SetActive(!playerCam.activeSelf);
+            }
+            inputSleep = 0.2f;
         }
 
         // Make sure the enemy index doesn't over/underflow.
         if(viewEnemy > enemyObjects.Count - 1) { viewEnemy = 0; }
         else if(viewEnemy < 0) { viewEnemy = enemyObjects.Count - 1; }
 
-
-        // Reset text outputs.
-        IOutput.text = string.Empty;
-        AcOutput.text = string.Empty;
-
-        // Update output with aggressiveness value.
-        AOutput.text = enemyObjects[viewEnemy].GetComponent<GoapAgent>().aggressiveness.ToString();
-
-
-        // For each goal the enemy has...
-        foreach (Tuple<string, bool, int> goal in enemyObjects[viewEnemy].GetComponent<GoapAgent>().getWorldData()
-                     .GetGoals())
+        
+        // Only update enemy cam UI if the enemy camera is active.
+        if (cam.activeInHierarchy)
         {
-            // Get the goal's insistence value and output it.
-            IOutput.text += goal.Item3 + "\n";
-        }
+            // Reset text outputs.
+            IOutput.text = string.Empty;
+            AcOutput.text = string.Empty;
 
-        // For each action remaining in the action plan...
-        foreach (GoapAction a in enemyObjects[viewEnemy].GetComponent<GoapAgent>().getCurrentActions())
+            // Update output with aggressiveness value.
+            AOutput.text = enemyObjects[viewEnemy].GetComponent<GoapAgent>().aggressiveness.ToString();
+
+
+            // For each goal the enemy has...
+            foreach (Tuple<string, bool, int> goal in enemyObjects[viewEnemy].GetComponent<GoapAgent>().getWorldData()
+                         .GetGoals())
+            {
+                // Get the goal's insistence value and output it.
+                IOutput.text += goal.Item3 + "\n";
+            }
+
+            // For each action remaining in the action plan...
+            foreach (GoapAction a in enemyObjects[viewEnemy].GetComponent<GoapAgent>().getCurrentActions())
+            {
+                // Output it in order of execution.
+                if (AcOutput.text == string.Empty)
+                {
+                    AcOutput.text += a._name;
+                }
+                else
+                {
+                    AcOutput.text += "--> " + a._name;
+                }
+            }
+
+            cam.transform.position = new Vector3(enemyObjects[viewEnemy].transform.position.x,
+                cam.transform.position.y,
+                enemyObjects[viewEnemy].transform.position.z);
+
+        }
+        else if (playerCam.activeInHierarchy)
         {
-            // Output it in order of execution.
-            if (AcOutput.text == string.Empty)
-            {
-                AcOutput.text += a._name;
-            }
-            else
-            {
-                AcOutput.text += "--> " + a._name;
-            }
-        }
+            string output = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerInventory>().GetItemOut();
+            if (output == "NONE") { output = "WALL"; }
 
-        cam.transform.position = new Vector3(enemyObjects[viewEnemy].transform.position.x,
-            cam.transform.position.y,
-            enemyObjects[viewEnemy].transform.position.z);
+            P_ItemOut.text = output;
+        }
 
         // Decrease the sleep timer by dt.
         inputSleep -= Time.deltaTime;
@@ -449,5 +475,22 @@ public class GameManager : MonoBehaviour
                 itemPickup.GetComponent<MeshRenderer>().material.color = Color.green;
                 break;
         }
+    }
+
+
+    // Debug functions to testing multiple status effects on the player for 5 seconds. Used by clicking on UI buttons on the player cam.
+    public void StunPlayerDebug()
+    {
+        GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerControl>().Stun(5);
+    }
+
+    public void SlowPlayerDebug()
+    {
+        GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerControl>().Slow(5);
+    }
+
+    public void BlindPlayerDebug()
+    {
+        GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerControl>().Blind(5);
     }
 }

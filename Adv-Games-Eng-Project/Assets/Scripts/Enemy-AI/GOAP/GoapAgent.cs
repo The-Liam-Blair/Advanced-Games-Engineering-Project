@@ -62,7 +62,7 @@ public sealed class GoapAgent : MonoBehaviour {
 		loadActions ();
 
         // Movement speed of the enemy.
-        GetComponent<NavMeshAgent>().speed = 11f;
+        GetComponent<NavMeshAgent>().speed = 9f;
 
 		// 'Pointer' to the world data class.
         WorldData = new CurrentWorldKnowledge();
@@ -373,7 +373,7 @@ public sealed class GoapAgent : MonoBehaviour {
     {
         GetComponent<NavMeshAgent>().speed = 3.33f; // Apply speed debuff.
         yield return new WaitForSeconds(duration);
-        GetComponent<NavMeshAgent>().speed = 10f; // Remove debuff by returning speed to normal.
+        GetComponent<NavMeshAgent>().speed = 9f; // Remove debuff by returning speed to normal.
 
         yield return null;
     }

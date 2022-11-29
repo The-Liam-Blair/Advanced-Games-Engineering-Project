@@ -17,4 +17,16 @@ public class PlayerInventory : Inventory
     {
         keyPieceCount = 0;
     }
+
+    public string GetItemOut()
+    {
+        if (IteminInventory == null)
+        {
+            return "NULL";
+        }
+        else
+        {
+            return IteminInventory.GetEffect();
+        }
+    }
 }

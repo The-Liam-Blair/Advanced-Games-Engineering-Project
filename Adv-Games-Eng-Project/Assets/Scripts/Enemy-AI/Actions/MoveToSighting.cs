@@ -84,10 +84,10 @@ public class MoveToSighting : GoapAction
 
     public override void prePerform()
     {
+        GetComponent<NavMeshAgent>().path = path;
+
         // Look up the path created to investigate the sighting and use it to update the movement cost of affected regions the agent moves through.
         UpdateNavAreas(path);
-
-        GetComponent<NavMeshAgent>().SetPath(path);
 
         hasPrePerformRun = true;
     }
