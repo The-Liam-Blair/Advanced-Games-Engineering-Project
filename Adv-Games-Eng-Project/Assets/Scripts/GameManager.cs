@@ -63,7 +63,7 @@ public class GameManager : MonoBehaviour
     private Text P_ItemOut;
 
     // Cameras- Enemy and player.
-   [SerializeField] private GameObject cam;
+   [SerializeField] private GameObject enemyCam;
    [SerializeField] private GameObject playerCam;
 
    // 'Pointer' like value thats used to determine which enemy is currently being viewed on the enemy camera.
@@ -75,17 +75,22 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        // Get references
+        // Int counter used to decide which enemy the camera views when viewing enemies.
         viewEnemy = 0; // 1 enemy initially spawned, so starts at 0
 
-        IOutput = GameObject.Find("IOutput").GetComponent<Text>();
-        AOutput = GameObject.Find("AOutput").GetComponent<Text>();
-        AcOutput = GameObject.Find("AcOutput").GetComponent<Text>();
+        playerCam.SetActive(true);
+        enemyCam.SetActive(true);
 
-       P_ItemOut = GameObject.Find("itemHeld").GetComponent<Text>();
+        // Get references to output text fields.
+        IOutput = GameObject.Find("IOutput").GetComponent<Text>(); // Enemy goal insistence values.
+        AOutput = GameObject.Find("AOutput").GetComponent<Text>(); // Enemy aggressiveness value.
+        AcOutput = GameObject.Find("AcOutput").GetComponent<Text>(); // Enemy current action list.
 
-        playerCam.SetActive(false);
-        cam.SetActive(true);
+       P_ItemOut = GameObject.Find("itemHeld").GetComponent<Text>(); // Player held item.
+
+        // Init player and enemy camera, player camera enabled only initially.
+        playerCam.SetActive(true);
+        enemyCam.SetActive(false);
 
 
         // Init item pickups
@@ -160,17 +165,17 @@ public class GameManager : MonoBehaviour
         // So unable to swap camera for 0.2 seconds after previous swap to prevent multiple inputs from 1 button press.
         if (inputSleep < 0)
         {
-            if (Input.GetAxisRaw("NextCam") > 0)
+            if (Input.GetAxisRaw("NextCam") > 0) // ' . ' key
             {
                 viewEnemy++;
             }
-            else if (Input.GetAxisRaw("PreviousCam") > 0)
+            else if (Input.GetAxisRaw("PreviousCam") > 0) // ' , ' key
             {
                 viewEnemy--;
             }
-            else if (Input.GetAxisRaw("SwapActiveCam") > 0)
+            else if (Input.GetAxisRaw("SwapActiveCam") > 0) // ' 0 ' key
             {
-                cam.SetActive(!cam.activeSelf);
+                enemyCam.SetActive(!enemyCam.activeSelf);
                 playerCam.SetActive(!playerCam.activeSelf);
             }
             inputSleep = 0.2f;
@@ -181,8 +186,8 @@ public class GameManager : MonoBehaviour
         else if(viewEnemy < 0) { viewEnemy = enemyObjects.Count - 1; }
 
         
-        // Only update enemy cam UI if the enemy camera is active.
-        if (cam.activeInHierarchy)
+        // Only update enemy camera's UI if the enemy camera is active.
+        if (enemyCam.activeInHierarchy)
         {
             // Reset text outputs.
             IOutput.text = string.Empty;
@@ -214,15 +219,16 @@ public class GameManager : MonoBehaviour
                 }
             }
 
-            cam.transform.position = new Vector3(enemyObjects[viewEnemy].transform.position.x,
-                cam.transform.position.y,
+            enemyCam.transform.position = new Vector3(enemyObjects[viewEnemy].transform.position.x,
+                enemyCam.transform.position.y,
                 enemyObjects[viewEnemy].transform.position.z);
 
         }
+        
+        // If enemy camera is not active then player camera is active, so update player camera's UI.
         else if (playerCam.activeInHierarchy)
         {
-            string output = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerInventory>().GetItemOut();
-            if (output == "NONE") { output = "WALL"; }
+            string output = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerInventory>().ItemEffectToString();
 
             P_ItemOut.text = output;
         }

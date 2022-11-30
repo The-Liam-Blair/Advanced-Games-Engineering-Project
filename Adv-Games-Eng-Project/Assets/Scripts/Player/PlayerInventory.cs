@@ -18,11 +18,15 @@ public class PlayerInventory : Inventory
         keyPieceCount = 0;
     }
 
-    public string GetItemOut()
+    public string ItemEffectToString()
     {
         if (IteminInventory == null)
         {
             return "NULL";
+        }
+        else if (IteminInventory.GetEffect() == "NONE")
+        {
+            return "WALL";
         }
         else
         {

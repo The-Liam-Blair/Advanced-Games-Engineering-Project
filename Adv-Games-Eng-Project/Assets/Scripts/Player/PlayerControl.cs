@@ -161,9 +161,10 @@ public class PlayerControl : MonoBehaviour
 
     IEnumerator BlindCoroutine(int duration)
     {
-        GameObject.Find("Spot Light").SetActive(false);
+        GameObject spot = GameObject.Find("Spot Light");
+        spot.SetActive(false);
         yield return new WaitForSeconds(duration);
-        GameObject.Find("Spot Light").SetActive(true);
+        spot.SetActive(true);
 
         yield return null;
     }
