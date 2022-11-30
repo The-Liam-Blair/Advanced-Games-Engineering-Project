@@ -11,6 +11,7 @@ using UnityEngine.AI;
 using UnityEngine.Events;
 using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
+using static UnityEditor.Progress;
 using Debug = UnityEngine.Debug;
 using Quaternion = UnityEngine.Quaternion;
 using Random = UnityEngine.Random;
@@ -86,10 +87,8 @@ public class GameManager : MonoBehaviour
         AOutput = GameObject.Find("AOutput").GetComponent<Text>(); // Enemy aggressiveness value.
         AcOutput = GameObject.Find("AcOutput").GetComponent<Text>(); // Enemy current action list.
 
-       P_ItemOut = GameObject.Find("itemHeld").GetComponent<Text>(); // Player held item.
+        P_ItemOut = GameObject.Find("itemHeld").GetComponent<Text>(); // Player held item.
 
-        // Init player and enemy camera, player camera enabled only initially.
-        playerCam.SetActive(true);
         enemyCam.SetActive(false);
 
 
@@ -361,16 +360,17 @@ public class GameManager : MonoBehaviour
         {
             tries++;
             // Generate a new position on the walkable area
-            pos = new Vector3(Random.Range(NavMeshBounds.min.x, NavMeshBounds.max.x), 1.1f, Random.Range(NavMeshBounds.min.z, NavMeshBounds.max.z));
+            pos = new Vector3(Random.Range(NavMeshBounds.min.x, NavMeshBounds.max.x), 1f, Random.Range(NavMeshBounds.min.z, NavMeshBounds.max.z));
 
             // If this position is within 1 unit of a nearby nav mesh point...
             if (NavMesh.SamplePosition(pos, out NavMeshHit navMeshPos, 3f, NavMesh.AllAreas))
             {
                 // Fetch the closest nav mesh point to the original position and test if a path can be made to it from origin (Origin lies on the nav mesh path).
                 // If a valid path is found...
-                if (NavMesh.CalculatePath(new Vector3(0, 1, 0), navMeshPos.position, NavMesh.AllAreas, path))
+                if (NavMesh.CalculatePath(new Vector3(0, 1f, 0), navMeshPos.position, NavMesh.AllAreas, path))
                 {
-                    // Return the valid position.
+                    // Return the valid position, with y value set to 1.5 as sample position will make the object intersect the floor.
+                    navMeshPos.position = new Vector3(navMeshPos.position.x, 1.5f, navMeshPos.position.z);
                     return navMeshPos.position;
                 }
             }

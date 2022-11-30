@@ -223,6 +223,7 @@ public abstract class GoapAction : MonoBehaviour {
     /// <param name="path">The validated, complete agent path.</param>
     protected void UpdateNavAreas(NavMeshPath path)
     {
+        /*
         List<NavMeshModifier> surfaces = new List<NavMeshModifier>();
         RaycastHit hit;
 
@@ -232,6 +233,27 @@ public abstract class GoapAction : MonoBehaviour {
             // The raycast will hit the nav mesh surface the waypoint is on (Always evaluates to true).
             // If this surface hasn't been recorded on the surfaces list, add it.
             if (Physics.Raycast(corner + (Vector3.up * 0.5f), Vector3.down, out hit, 1f))
+            {
+                if (!surfaces.Contains(hit.transform.gameObject.GetComponent<NavMeshModifier>()))
+                {
+                    surfaces.Add(hit.transform.gameObject.GetComponent<NavMeshModifier>());
+                }
+            }
+        }
+        */
+
+        List<NavMeshModifier> surfaces = new List<NavMeshModifier>();
+        RaycastHit[] hits;
+
+        for (int i = 1; i < path.corners.Length; i++)
+        {
+            Debug.DrawRay(path.corners[i], (path.corners[i - 1] - path.corners[i]), Color.red, 5);
+            hits = Physics.RaycastAll(path.corners[i] - new Vector3(0, 0.5f, 0),
+                (path.corners[i-1] - path.corners[i]),
+                Vector3.Distance(path.corners[i], path.corners[i-1]),
+                LayerMask.GetMask("NavMesh"));
+
+            foreach (RaycastHit hit in hits)
             {
                 if (!surfaces.Contains(hit.transform.gameObject.GetComponent<NavMeshModifier>()))
                 {

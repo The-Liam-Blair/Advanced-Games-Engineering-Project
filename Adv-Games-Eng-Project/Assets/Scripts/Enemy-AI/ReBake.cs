@@ -6,6 +6,7 @@ using Unity.Jobs;
 using UnityEditor.Experimental;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UIElements;
 
 /// <summary>
 /// Rebakes the entire nav mesh. While not super inefficient, a more optimised solution will later be
@@ -30,6 +31,7 @@ public class ReBake : MonoBehaviour
 
     public void Bake()
     {
+
         ISNAVMESHBUILDING = true;
         Rebaker.BuildNavMesh();
         ISNAVMESHBUILDING = false;
@@ -46,6 +48,7 @@ public class ReBake : MonoBehaviour
         // Increment each surface first, then bake once for efficiency.
         foreach (NavMeshModifier surface in surfaces)
         {
+            if(surface.area == NavMesh.GetAreaFromName("SIX_AGENT")) { return; }
             surface.area++;
         }
         Bake();
