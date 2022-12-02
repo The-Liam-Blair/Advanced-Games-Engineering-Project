@@ -33,6 +33,9 @@ public class PlayerControl : MonoBehaviour
     // Scales movement speed, used to slow the player.
     private float speedMultiplier;
 
+    // Reference to spot light: if player is hit by multiple blinds: errors from null reference to spot light, this prevents that error by keeping a reference from game start.
+    private GameObject spotLight;
+
     private void Start()
     {
         isStunned = false;
@@ -40,8 +43,9 @@ public class PlayerControl : MonoBehaviour
         inventory = GetComponent<PlayerInventory>();
 
         speedMultiplier = 1f;
+        spotLight = GameObject.Find("p_Spot Light");
     }
-    
+
     private void FixedUpdate()
     {
         // No movement possible when stunned, and cannot use items either.
@@ -128,12 +132,6 @@ public class PlayerControl : MonoBehaviour
     /// <param name="duration"></param>
     public void Blind(int duration)
     {
-        // TODO: DEBUG CODE: REMOVE FROM RELEASE
-        // Only blind works in the lighting test scene.
-        if (SceneManager.GetActiveScene().name == "Multi-agent-Test")
-        {
-            return;
-        }
         StartCoroutine(BlindCoroutine(duration));
     }
 
@@ -165,10 +163,11 @@ public class PlayerControl : MonoBehaviour
 
     IEnumerator BlindCoroutine(int duration)
     {
-        GameObject spot = GameObject.Find("Spot Light");
-        spot.SetActive(false);
+        if(!spotLight.activeInHierarchy) { yield return null; } // If already blinded, ignore the subsequent blind.
+        
+        spotLight.SetActive(false);
         yield return new WaitForSeconds(duration);
-        spot.SetActive(true);
+        spotLight.SetActive(true);
 
         yield return null;
     }
