@@ -90,6 +90,10 @@ public sealed class GoapAgent : MonoBehaviour {
         // Must be done in awake function as enemy name is used as an indexer for assigning movement waypoints and awake functions are called before start functions.
         name = GameObject.Find("_GAMEMANAGER").GetComponent<GameManager>().GetEnemyCount().ToString();
 
+        GetComponent<Rigidbody>().isKinematic = true;
+
+
+
     }
 	
 

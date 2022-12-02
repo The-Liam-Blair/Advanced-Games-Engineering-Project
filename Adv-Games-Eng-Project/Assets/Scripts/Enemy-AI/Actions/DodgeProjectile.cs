@@ -63,6 +63,8 @@ public class DodgeProjectile: GoapAction
             return true;
         }
         target = WorldData.PlayerProjectiles[0];
+        
+        agent.GetComponent<Rigidbody>().isKinematic = false;
 
         // do raycast to left and right sides, choose side that is furthest away
         // from the projectile's path, then move to that side
@@ -97,6 +99,8 @@ public class DodgeProjectile: GoapAction
         UpdateWorldState();
 
         GetComponent<NavMeshAgent>().speed = 9f;
+
+        GetComponent<Rigidbody>().isKinematic = true;
 
         return true;
     }

@@ -79,10 +79,6 @@ public class GameManager : MonoBehaviour
     // Set to 0.3f every time the camera is switched or moved to another enemy to prevent multiple inputs per button press.
     private float inputSleep;
 
-    // Game manager spawns increasingly more enemies as the game progresses: This is the cooldown for spawning the next enemy.
-    private float enemySpawnCooldown;
-
-
     private void Awake()
     {
         // Int counter used to decide which enemy the camera views when viewing enemies.
@@ -157,8 +153,6 @@ public class GameManager : MonoBehaviour
         enemyObjects[0].transform.parent = GameObject.Find("ENEMIES").transform;
 
         itemRespawnTimer = 0.0f;
-        
-        enemySpawnCooldown = 30f; // 30 seconds before enemies start spawning.
     }
 
     private void LateUpdate()
@@ -260,17 +254,9 @@ public class GameManager : MonoBehaviour
                 P_KeyCount.text = "ALL KEY PIECES FOUND.\n GO TO THE EXIT!!!";
             }
         }
-
-        if (enemySpawnCooldown < 0f && enemyObjects.Count < 5) // Up to 5 enemies will spawn naturally.
-        {
-            AddEnemy(); // Accesses same function used by the "Add ENEMY" button in the debug UI.
-            enemySpawnCooldown = 30f;
-        }
-
         // Decrease timers by dt.
         inputSleep -= Time.deltaTime;
         itemRespawnTimer -= Time.deltaTime;
-        enemySpawnCooldown -= Time.deltaTime;
     }
 
     /// <summary>
