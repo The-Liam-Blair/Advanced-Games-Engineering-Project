@@ -31,10 +31,15 @@ public class ReBake : MonoBehaviour
 
     public void Bake()
     {
+        ISNAVMESHBUILDING = true;   
 
-        ISNAVMESHBUILDING = true;
         Rebaker.BuildNavMesh();
+
+        // Wait until nav mesh is built...
+        while (Rebaker.navMeshData == null) {}
+        
         ISNAVMESHBUILDING = false;
+
     }
 
     /// <summary>
@@ -45,28 +50,28 @@ public class ReBake : MonoBehaviour
     /// <param name="surfaces">List of nav meshes (their nav mesh modifier component) accessed by one agent.</param>
     public void IncrementSurfaceArea(List<NavMeshModifier> surfaces)
     {
-        // Increment each surface first, then bake once for efficiency.
+        // Increment each surface area ID first, then bake once for efficiency.
         foreach (NavMeshModifier surface in surfaces)
         {
-            if(surface.area == NavMesh.GetAreaFromName("SIX_AGENT")) { return; }
+            if (surface.area == NavMesh.GetAreaFromName("SIX_AGENT")) { continue; } // SIX_AGENT is the max area ID, do not increment further.
             surface.area++;
         }
         Bake();
 
-        // Perform opposite of the above: After 3 second delay, decrement each surface and bake once.
+        // Perform opposite of the above: After a 1 second delay, decrement each surface and bake once to reset the area IDs.
         StartCoroutine(DecrementAreaDelayCoroutine(surfaces));
     }
 
     IEnumerator DecrementAreaDelayCoroutine(List<NavMeshModifier> surfaces)
     {
-        yield return new WaitForSeconds(3);
+        yield return new WaitForSeconds(1f);
 
         foreach (NavMeshModifier surface in surfaces)
         {
             surface.area--;
         }
         Bake();
-
+        
         yield return null;
     }
 }

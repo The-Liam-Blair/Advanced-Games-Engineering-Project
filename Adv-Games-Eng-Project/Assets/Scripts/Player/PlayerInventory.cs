@@ -18,19 +18,26 @@ public class PlayerInventory : Inventory
         keyPieceCount = 0;
     }
 
-    public string ItemEffectToString()
+    // Get's item stats and duration to be used in the UI output.
+    public string ItemOutput()
     {
+        string output = "";
         if (IteminInventory == null)
         {
-            return "NULL";
+            output += "NULL";
+            return output; // Prevents null reference exception errors.
         }
         else if (IteminInventory.GetEffect() == "NONE")
         {
-            return "WALL";
+            output += "WALL";
         }
         else
         {
-            return IteminInventory.GetEffect();
+            output += IteminInventory.GetEffect();
         }
+
+        output += ", " + IteminInventory.duration + " SECONDS";
+
+        return output;
     }
 }

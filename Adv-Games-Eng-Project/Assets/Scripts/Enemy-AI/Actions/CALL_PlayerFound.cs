@@ -80,8 +80,6 @@ public class CALL_PlayerFound : GoapAction
             {
                 if (Vector3.Distance(agent.transform.position, enemy.transform.position) <= 200 && agent != enemy)
                 {
-                    Debug.DrawLine(agent.transform.position + Vector3.up, enemy.transform.position + Vector3.up,
-                        Color.white, 3);
                     enemy.GetComponent<GoapAgent>().ReceiveCall(agent, target, "CHASEPLAYER");
                 }
             }

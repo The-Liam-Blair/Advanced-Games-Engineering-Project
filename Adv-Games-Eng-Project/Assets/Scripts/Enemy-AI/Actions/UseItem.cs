@@ -22,7 +22,7 @@ public class UseItem : GoapAction
         addEffect("aimingAtPlayer", false); // No longer aiming at player.
         addEffect("hasUsedItem", true);     // Item used in this action sequence.
 
-        actionEnabled = true; // Action enabling may still need worked on
+        actionEnabled = false;
     }
  
 

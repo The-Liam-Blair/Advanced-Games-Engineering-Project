@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 7469525511178287227}
   - component: {fileID: 7469525511178287206}
   - component: {fileID: -974810062671241376}
+  - component: {fileID: -7855785489866649210}
   - component: {fileID: -9172221401472518941}
   - component: {fileID: 7469525511178287225}
   - component: {fileID: 7469525511178287229}
@@ -148,7 +149,9 @@ MonoBehaviour:
   playerChaseTime: 0
   playerChaseCooldown: 0
   playerSightingCooldown: 0
+  DodgeCooldown: 0
   aggressiveness: 0
+  isBlinded: 0
 --- !u!114 &7469525511178287231
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -168,6 +171,7 @@ MonoBehaviour:
   target: {fileID: 0}
   hasPrePerformRun: 0
   _name: 
+  points: []
 --- !u!114 &7469525511178287226
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -187,6 +191,7 @@ MonoBehaviour:
   target: {fileID: 0}
   hasPrePerformRun: 0
   _name: 
+  points: []
 --- !u!114 &7469525511178287230
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -206,6 +211,7 @@ MonoBehaviour:
   target: {fileID: 0}
   hasPrePerformRun: 0
   _name: 
+  points: []
 --- !u!114 &7469525511178287227
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -225,6 +231,7 @@ MonoBehaviour:
   target: {fileID: 0}
   hasPrePerformRun: 0
   _name: 
+  points: []
 --- !u!114 &7469525511178287206
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -244,6 +251,7 @@ MonoBehaviour:
   target: {fileID: 0}
   hasPrePerformRun: 0
   _name: 
+  points: []
 --- !u!114 &-974810062671241376
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -263,6 +271,27 @@ MonoBehaviour:
   target: {fileID: 0}
   hasPrePerformRun: 0
   _name: 
+  points: []
+--- !u!114 &-7855785489866649210
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7469525511178287201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95eeba0dd37879e4b8118a417a34c9f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cost: 0
+  currentMovementCost: 0
+  currentCostTooHigh: 0
+  resetCount: 0
+  target: {fileID: 0}
+  hasPrePerformRun: 0
+  _name: 
+  points: []
 --- !u!114 &-9172221401472518941
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -282,6 +311,7 @@ MonoBehaviour:
   target: {fileID: 0}
   hasPrePerformRun: 0
   _name: 
+  points: []
 --- !u!195 &7469525511178287225
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -294,12 +324,12 @@ NavMeshAgent:
   m_Radius: 0.5
   m_Speed: 0
   m_Acceleration: 50
-  avoidancePriority: 50
+  avoidancePriority: 0
   m_AngularSpeed: 200
   m_StoppingDistance: 0
-  m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
-  m_AutoRepath: 1
+  m_AutoTraverseOffMeshLink: 0
+  m_AutoBraking: 0
+  m_AutoRepath: 0
   m_Height: 1
   m_BaseOffset: 0.5
   m_WalkableMask: 1016
@@ -318,7 +348,7 @@ Rigidbody:
   m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 126
+  m_Constraints: 116
   m_CollisionDetection: 0
 --- !u!1 &7469525511801252153
 GameObject:

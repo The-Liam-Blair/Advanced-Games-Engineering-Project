@@ -13,6 +13,7 @@ public class CurrentWorldKnowledge
         CHASEPLAYER,
         FINDITEM,
         CALL_PLAYERSIGHTED,
+        DODGEPROJECTILE,
         PATROL
     };
 
@@ -31,8 +32,8 @@ public class CurrentWorldKnowledge
     // List of sighted items, mostly used for getting their location.
     public List<GameObject> ItemLocations;
 
-    // Stores if a player used item (Projectile or trap) is sighted, used to avoid it, if it knows how to.
-    private List<GameObject> PlayerProjectiles;
+    // Stores if a player used projectile is sighted, used to avoid it if the agent knows how to.
+    public List<GameObject> PlayerProjectiles;
 
     public CurrentWorldKnowledge()
     {
@@ -52,6 +53,7 @@ public class CurrentWorldKnowledge
 
         WorldData.Add(new KeyValuePair<string, bool>("isPatrolling", false)); // Is the enemy currently patrolling?
 
+        WorldData.Add(new KeyValuePair<string, bool>("incomingProjectile", false)); // Is a player projectile incoming (towards the agent)?
 
 
         // Set list of all possible goals to choose from, and a placeholder insistence value of -1.
@@ -60,10 +62,12 @@ public class CurrentWorldKnowledge
         Goals.Add(new Tuple<string, bool, int>("attackPlayer", true, -1));         // Move to the player and attack them.
         Goals.Add(new Tuple<string, bool, int>("hasItem", true, -1));              // Acquire a seen item.
         Goals.Add(new Tuple<string, bool, int>("moveToPlayerSighting", true, -1)); // Investigate a player sighting called from another enemy.
+        Goals.Add(new Tuple<string, bool, int>("incomingProjectile", false, -1));         // Default goal if no other is picked: Patrol w.r.t aggressiveness.
         Goals.Add(new Tuple<string, bool, int>("isPatrolling", true, -1));         // Default goal if no other is picked: Patrol w.r.t aggressiveness.
 
 
         ItemLocations = new List<GameObject>();
+        PlayerProjectiles = new List<GameObject>();
     }
 
     /// <summary>
@@ -80,6 +84,18 @@ public class CurrentWorldKnowledge
             }
         }
         ItemLocations.Add(item);
+    }
+
+    /// <summary>
+    /// Add a seen player projectile to the list. Almost always, only one will be sighted.
+    /// </summary>
+    /// <param name="projectile">Sighted projectile.</param>
+    public void AddPlayerProjectile(GameObject projectile)
+    {
+        if (!PlayerProjectiles.Contains(projectile))
+        {
+            PlayerProjectiles.Add(projectile);
+        }
     }
 
     /// <summary>
@@ -232,13 +248,20 @@ public class CurrentWorldKnowledge
                 // If the enemy hasn't seen any items yet or already has one, this goal's insistence is set to -1, meaning it will not be picked.
                 case GOALS.FINDITEM:
                     Insistence = -1;
-                    if (ItemLocations.Count > 0 && GetFactState("hasItem", false)) { Insistence = 66; }
+                    if (ItemLocations.Count > 0 && GetFactState("hasItem", false)) { Insistence = 70; }
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
 
                 case GOALS.CALL_PLAYERSIGHTED:
                     Insistence = -1;
-                    if(GetFactState("RECEIVECALL_playerSighting", true)) { Insistence = 100; }
+                    if(GetFactState("RECEIVECALL_playerSighting", true)) { Insistence = 90; }
+                    UpdateGoalInsistence(Goals[i], Insistence, i);
+                    break;
+
+
+                case GOALS.DODGEPROJECTILE:
+                    Insistence = -1;
+                    if(GetFactState("incomingProjectile", true)) { Insistence = 500; }
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
 

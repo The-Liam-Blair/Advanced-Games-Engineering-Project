@@ -14,15 +14,15 @@ NavMeshProjectSettings:
   - name: ZERO_AGENT
     cost: 1
   - name: ONE_AGENT
-    cost: 10
-  - name: TWO_AGENT
     cost: 100
-  - name: THREE_AGENT
-    cost: 1000
-  - name: FOUR_AGENT
+  - name: TWO_AGENT
     cost: 10000
+  - name: THREE_AGENT
+    cost: 1000000
+  - name: FOUR_AGENT
+    cost: 1000000
   - name: FIVE_AGENT
-    cost: 100000
+    cost: 1000000
   - name: SIX_AGENT
     cost: 1000000
   - name: 

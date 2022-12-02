@@ -39,7 +39,14 @@ public class ItemPickup : MonoBehaviour
             else { other.gameObject.GetComponent<Inventory>().IteminInventory = item; }
 
             GameObject.Find("_GAMEMANAGER").GetComponent<GameManager>().ItemPickedUp(int.Parse((name)));
-            GameObject.FindGameObjectWithTag("Enemy").GetComponent<GoapAgent>().getWorldData().RemoveItemLocation(gameObject);
+
+            var enemies = GameObject.FindGameObjectsWithTag("Enemy");
+
+            // For simple handling of taken items: Every enemy knows the item was taken, so they can't try to take it.
+            foreach (GameObject enemy in enemies)
+            {
+                enemy.GetComponent<GoapAgent>().getWorldData().RemoveItemLocation(gameObject);
+            }
         }
     }
 }

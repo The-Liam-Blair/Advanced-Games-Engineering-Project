@@ -101,11 +101,10 @@ public class GoalCreation : MonoBehaviour, IGoap
     /// <returns>True if the agent arrived at the action location or the action was bailed. False if the agent hasn't arrived at the action location yet.</returns>
     public bool moveAgent(GoapAction nextAction)
     {
-
         /////////////////////////////////
         // -- CHECK GOAL INSISTENCE -- //
         /////////////////////////////////
-
+        /// 
         var currentGoal = WorldData.GetCurrentGoal(); // Fetch current goal.
         
         // If the current goal has changed (Which means a new goal has been selected)...
@@ -117,6 +116,15 @@ public class GoalCreation : MonoBehaviour, IGoap
             return true;
         }
 
+        // If the target is invalid, cancel the action + plan as the action cannot be completed anymore.
+        // Only common instance of an invaild target is if 2+ agents try to get an item at the same time and another agent beats them to it.
+        // Also if an agent's path breaks for any reason, such as from an unexpected change in an object's position.
+        if (nextAction.target == null || GetComponent<NavMeshAgent>().velocity == Vector3.zero)
+        {
+            nextAction.currentCostTooHigh = true;
+            nextAction.setInRange(true);
+            return true;
+        }
 
         /////////////////////////////////
         //// -- UPDATE AGENT PATH -- ////
@@ -125,28 +133,23 @@ public class GoalCreation : MonoBehaviour, IGoap
         // Spin until nav mesh is built.
         while (NavMeshBaker.ISNAVMESHBUILDING) {}
 
-        // Update + set enemy agent's nav mesh destination. to be the action's associated location.
+        // Update + set enemy agent's nav mesh destination. to be the action's associated location, only for player who moves every frame.
         if (nextAction.target.tag == "Player")
         {
             gameObject.GetComponent<NavMeshAgent>().destination = nextAction.target.transform.position;
         }
-
+        
         ///////////////////////////////////
         //// -- CHECK MOVEMENT COST -- ////
         ///////////////////////////////////
 
         // Perform a distance check between enemy agent and action's associated location. If this evaluates to true, destroy the nav mesh path
         // and return true (agent is at action location). Otherwise, return false (agent needs to keep moving).
-        if (Vector3.Distance(gameObject.transform.position, nextAction.target.transform.position) < 1f)
+        if (Vector3.Distance(gameObject.transform.position, nextAction.target.transform.position) < 1.1f)
         {
             nextAction.setInRange(true);
             nextAction.gameObject.GetComponent<NavMeshAgent>().ResetPath();
             return true;
-        }
-
-        if (gameObject.GetComponent<NavMeshAgent>().velocity == Vector3.zero)
-        {
-            gameObject.GetComponent<NavMeshAgent>().destination = nextAction.target.transform.position;
         }
 
         // Update current movement cost of this action. Value is halved to scale it approximately to the pre-calculated cost of the action.
@@ -167,8 +170,8 @@ public class GoalCreation : MonoBehaviour, IGoap
             // If this distance is short, reduce the current movement cost slightly to make the enemy pursue this action for longer in the hopes that
             // it reaches it within a still-reasonable time frame.
 
-            // Algorithm will only reduce the current action time 3 times to stop the enemy from endlessly pursuing a target.
-            else if (nextAction.resetCount < 3)
+            // Algorithm will only reduce the current action time 2 times to stop the enemy from endlessly pursuing a target.
+            else if (nextAction.resetCount < 2)
             {
                 float dist = Vector3.Distance(transform.position, nextAction.target.transform.position);
                 float calcCost = dist / nextAction.currentMovementCost;
@@ -192,45 +195,69 @@ public class GoalCreation : MonoBehaviour, IGoap
         // as seen below as 'i + 5';
         RaycastHit[] hits = new RaycastHit[10];
 
-        for (int i = -5; i < 5; i++)
+        if (!GetComponent<GoapAgent>().isBlinded)
         {
-            if (i >= -2 && i <= 2)
+            for (int i = -5; i < 5; i++)
             {
-                // Inner sight: Can fire projectiles at the player at this viewing angle.
-                //Debug.DrawLine(transform.position,transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 12f, Color.black);
-            }
-            else
-            {
-                // Outer sight: Needs to rotate first before it can accurately fire a projectile.
-                //Debug.DrawLine(transform.position, transform.position + Quaternion.AngleAxis(i * 10, transform.up) * transform.forward * 12f, Color.red);
-            }
-
-            // Draw 10 raycasts from the enemy in a fan - like shape. Each ray will travel for 5 units in their respective directions and then
-            // record the first collision encountered in the "hit" output. It will not report collisions beyond the first (does not travel through entities, walls).
-            if (Physics.Raycast(transform.position,
-                    Quaternion.AngleAxis(i * 10, transform.up) * transform.forward *
-                    12f,
-                    out hits[i + 5],
-                    8f))
-            {
-                // If a ray cast hits the player and the enemy isn't in an active chase, begin the chase:
-                if (hits[i + 5].collider.gameObject.tag == "Player" && GetComponent<GoapAgent>().playerChaseTime == 0f &&
-                    GetComponent<GoapAgent>().playerChaseCooldown < 0f)
+                if (i >= -2 && i <= 2)
                 {
-                    // Update world knowledge to reflect that the player has been found.
-                    WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", true));
-                    GetComponent<GoapAgent>().playerChaseTime = 0.01f;
-
-                    // Massively reduce aggressiveness value as a result of attacking the player.
-                    GetComponent<GoapAgent>().aggressiveness -= 75f;      
-                    if (GetComponent<GoapAgent>().aggressiveness < 0) { GetComponent<GoapAgent>().aggressiveness = 0; } // And don't let it reach a negative value.
+                    // Inner sight: Can fire projectiles at the player at this viewing angle (Approximately).
+                    //Debug.DrawRay(transform.position,
+                    //    (Quaternion.AngleAxis(i * 10, transform.up) * transform.forward).normalized * 8f,
+                   //     Color.black,
+                    //    0.01f);
+                }
+                else
+                {
+                    // Outer sight: Needs to rotate first before it can accurately fire a projectile.
+                   // Debug.DrawRay(transform.position,
+                   //     (Quaternion.AngleAxis(i * 10, transform.up) * transform.forward).normalized * 8f,
+                   //     Color.red,
+                    //    0.01f);
                 }
 
-                // Enemy sees an item and doesn't own an item and has learned about using items...
-                else if (hits[i + 5].collider.gameObject.tag == "Item" &&
-                         GetComponent<Inventory>().IteminInventory == null && GetComponent<UseItem>().isActionEnabled())
+                // Draw 10 raycasts from the enemy in a fan - like shape. Each ray will travel for 5 units in their respective directions and then
+                // record the first collision encountered in the "hit" output. It will not report collisions beyond the first (does not travel through entities, walls).
+                if (Physics.Raycast(transform.position,
+                        (Quaternion.AngleAxis(i * 10, transform.up) * transform.forward).normalized *
+                        8f,
+                        out hits[i + 5],
+                        8f))
                 {
-                    WorldData.AddItemLocation(hits[i + 5].transform.gameObject);
+                    // If a ray cast hits the player and the enemy isn't in an active chase, begin the chase:
+                    if (hits[i + 5].collider.gameObject.tag == "Player" &&
+                        GetComponent<GoapAgent>().playerChaseTime == 0f &&
+                        GetComponent<GoapAgent>().playerChaseCooldown < 0f)
+                    {
+                        // Update world knowledge to reflect that the player has been found.
+                        WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", true));
+                        GetComponent<GoapAgent>().playerChaseTime = 0.01f;
+
+                        // Massively reduce aggressiveness value as a result of attacking the player.
+                        GetComponent<GoapAgent>().aggressiveness -= 75f;
+                        if (GetComponent<GoapAgent>().aggressiveness < 0)
+                        {
+                            GetComponent<GoapAgent>().aggressiveness = 0;
+                        } // And don't let it reach a negative value.
+                    }
+
+                    // Enemy sees an item and doesn't own an item and has learned about using items...
+                    else if (hits[i + 5].collider.gameObject.tag == "Item" &&
+                             GetComponent<Inventory>().IteminInventory == null &&
+                             GetComponent<UseItem>().isActionEnabled())
+                    {
+                        WorldData.AddItemLocation(hits[i + 5].transform.gameObject);
+                    }
+
+                    else if (hits[i + 5].collider.gameObject.tag == "PlayerProjectile" &&
+                             GetComponent<GoapAgent>().DodgeCooldown <
+                             0f && GetComponent<DodgeProjectile>().isActionEnabled())
+                    {
+                        Debug.Log("BRUHHH");
+                        WorldData.EditDataValue(new KeyValuePair<string, bool>("incomingProjectile", true));
+                        WorldData.AddPlayerProjectile(hits[i + 5].transform.gameObject);
+                        GetComponent<GoapAgent>().DodgeCooldown = 15f;
+                    }
                 }
             }
         }
@@ -258,8 +285,12 @@ public class GoalCreation : MonoBehaviour, IGoap
 
         // Increase aggressiveness if not chasing the player, decrease it at a more rapid scale while chasing the player.
         // Range of aggressive is 0 <= aggressiveness <= 100
-        GetComponent<GoapAgent>().aggressiveness += 4 * Time.deltaTime;
+        GetComponent<GoapAgent>().aggressiveness += Time.deltaTime;
         if (GetComponent<GoapAgent>().aggressiveness >= 100f) { GetComponent<GoapAgent>().aggressiveness = 100f; }
+
+        GetComponent<GoapAgent>().playerSightingCooldown -= Time.deltaTime;
+
+        GetComponent<GoapAgent>().DodgeCooldown -= Time.deltaTime;
 
         // Returns false if above conditions don't set it to true, indicating that the agent needs to travel more.
         return false;

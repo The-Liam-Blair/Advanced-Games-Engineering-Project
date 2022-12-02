@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SocialPlatforms;
 using UnityEngine.UI;
+using static UnityEditor.PlayerSettings;
 using Random = UnityEngine.Random;
 
 
@@ -16,8 +17,6 @@ public class PatrolToPoint : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
     private bool reachedWaypoint;
-
-    private NavMeshPath path;
 
     // Init preconditions and effects.
     public PatrolToPoint()
@@ -35,10 +34,9 @@ public class PatrolToPoint : GoapAction
     public override void reset()
     {
         reachedWaypoint = false;
-        cost = 1f;
+        cost = 1f; 
+        hasPrePerformRun = false;
         path = null;
-                hasPrePerformRun = false;
-
     }
 
     // Check if the action has been completed.
@@ -68,10 +66,6 @@ public class PatrolToPoint : GoapAction
         {
             NavMeshBaker = GameObject.Find("NAV_MESHES").GetComponent<ReBake>();
         }
-        
-        // Get cost from time to target (distance / speed) Speed is constant so acceleration isn't calculated.
-        // Since path to target isn't created yet, one must be sampled (but not exactly instantiated) to test for distance.
-        NavMeshAgent nmAgent = agent.GetComponent<NavMeshAgent>();
 
         // Calculate path sample, store inside path variable.
         NavMeshPath _path = new NavMeshPath();
@@ -84,6 +78,9 @@ public class PatrolToPoint : GoapAction
         // No. of tries to get a suitable path. Serves as an exit to the while loop if something goes wrong.
         int tries = 0;
 
+        // Walkable bounds of the level.
+        Bounds NavMeshBounds = GameObject.Find("Walkable_Bounds").GetComponent<MeshRenderer>().bounds;
+
         // Runs until a suitable path is found or run out of tries (Which should be in the first iteration due to how SamplePosition works, but good to be safe).
         while (tries < 100)
         {
@@ -93,27 +90,29 @@ public class PatrolToPoint : GoapAction
             Vector3 playerPos = GameObject.Find("Player").transform.position;
 
             // Low aggressiveness: Player's position is not given in any way. Random movement.
-            if (aggressiveness <= 29)
+            if (aggressiveness <= 39)
             {
-                randWalkPoint = new Vector3(Random.Range(-30f, 30f), 1, Random.Range(-30f, 30f));
-            }    
-            
-            // Medium aggressiveness: Player's position is supplied with 20 units of noise on the x and z axes.
-            else if (aggressiveness > 30 && aggressiveness <= 59)
+                randWalkPoint = new Vector3(Random.Range(NavMeshBounds.min.x, NavMeshBounds.max.x), 1f, Random.Range(NavMeshBounds.min.z, NavMeshBounds.max.z));
+            }
+
+            // Medium aggressiveness: Player's position is supplied with 30 units of noise on the x and z axes.
+            else if (aggressiveness > 40 && aggressiveness <= 69)
             {
-                randWalkPoint = playerPos + new Vector3(Random.Range(-10f, 10f), 1, Random.Range(-10f, 10f));
+                randWalkPoint = playerPos + new Vector3(Random.Range(-15f, 15f), 1, Random.Range(-15f, 15f));
             }
             
-            // High aggressiveness: Player's position is supplied with 5 units of noise on the x and z axes (More accurate than medium).
-            else if (aggressiveness > 60 && aggressiveness <= 89)
+            // High aggressiveness: Player's position is supplied with 15 units of noise on the x and z axes (More accurate than medium).
+            else if (aggressiveness > 70 && aggressiveness <= 09)
             {
-                randWalkPoint = playerPos + new Vector3(Random.Range(-2.5f, 2.5f), 1, Random.Range(-2.5f, 2.5f));
+                randWalkPoint = playerPos + new Vector3(Random.Range(-7.5f, 7.5f), 1, Random.Range(-7.5f, 7.5f));
             }
             
             // Extreme aggressiveness: Player's position is supplied with no noise (Most accurate).
             else
             {
                 randWalkPoint = playerPos;
+                aggressiveness -= 50; // Drop aggressiveness massively so that the enemy won't get stuck on 100% aggressiveness, resulting in predictable movement.
+                                      // Also stops enemies with max aggressiveness from inevitably clumping together as they path find to the same location.
             }
 
             // If a nav mesh is being rebuilt, spin until it's built.
@@ -134,7 +133,7 @@ public class PatrolToPoint : GoapAction
                     float pathDist = GetPathLength(_path);
 
                     // Calculate movement cost from distance / speed.
-                    cost = pathDist / nmAgent.speed;
+                    cost = pathDist / GetComponent<NavMeshAgent>().speed;
 
                     path = _path;
 
@@ -152,7 +151,10 @@ public class PatrolToPoint : GoapAction
 
     public override void prePerform()
     {
-        GetComponent<NavMeshAgent>().path = path;
+        // If a nav mesh is being rebuilt, spin until it's built.
+        while (NavMeshBaker.ISNAVMESHBUILDING) { }
+        
+        GetComponent<NavMeshAgent>().SetPath(path);
 
         hasPrePerformRun = true;
 

@@ -34,12 +34,11 @@ public abstract class GoapAction : MonoBehaviour {
     public bool hasPrePerformRun;
 
     // Representation of an enemy's understanding of a given item or game mechanic.
-    // Knowledge is gained from being hurt by the item. todo: maybe from seeing the item in use as well?
-    // If knowledge >= 100 : Enemy will be able to utilise that item or game mechanic against the player.
-    // If knowledge >= 200 : Enemy additionally will try to counter player-made items or mechanics used against the enemy, primarily dodging.
+    // Knowledge is gained from being hit by the item.
+    // If knowledge >= 100 : Enemy will be able to utilise items against the player.
+    // If knowledge >= 200 : Enemy additionally will try to dodge incoming items.
     protected int actionKnowledge;
-    protected bool canCounterAction;
-    
+
     public string _name;
 
     // Reference to the agent's world knowledge.
@@ -48,12 +47,16 @@ public abstract class GoapAction : MonoBehaviour {
     // Reference to the nav mesh baker script
     public static ReBake NavMeshBaker;
 
+    // Some actions will store a copy of the path required to reach the action location.
+    public NavMeshPath path;
+
     void Start()
     {
         WorldData = GetComponent<GoapAgent>().getWorldData();
         _name = GetType().FullName;
         NavMeshBaker = GameObject.Find("NAV_MESHES").GetComponent<ReBake>();
         hasPrePerformRun = true; // Actions that don't implement the prePerform function has this set to true. Functions that implement this set it to false initially.
+        path = null;
     }
 
     public GoapAction() {
@@ -61,7 +64,6 @@ public abstract class GoapAction : MonoBehaviour {
 		effects = new HashSet<KeyValuePair<string,bool>> ();
 
         actionKnowledge = 0;
-        canCounterAction = false;
     }
 
     /// <summary>
@@ -74,6 +76,7 @@ public abstract class GoapAction : MonoBehaviour {
         currentMovementCost = 0f;
         currentCostTooHigh = false;
         resetCount = 0;
+        path = null;
         WorldData = GetComponent<GoapAgent>().getWorldData();
     }
 
@@ -223,34 +226,15 @@ public abstract class GoapAction : MonoBehaviour {
     /// <param name="path">The validated, complete agent path.</param>
     protected void UpdateNavAreas(NavMeshPath path)
     {
-        /*
-        List<NavMeshModifier> surfaces = new List<NavMeshModifier>();
-        RaycastHit hit;
-
-        // For each corner waypoint in the path...
-        foreach (Vector3 corner in path.corners)
-        {
-            // The raycast will hit the nav mesh surface the waypoint is on (Always evaluates to true).
-            // If this surface hasn't been recorded on the surfaces list, add it.
-            if (Physics.Raycast(corner + (Vector3.up * 0.5f), Vector3.down, out hit, 1f))
-            {
-                if (!surfaces.Contains(hit.transform.gameObject.GetComponent<NavMeshModifier>()))
-                {
-                    surfaces.Add(hit.transform.gameObject.GetComponent<NavMeshModifier>());
-                }
-            }
-        }
-        */
-
         List<NavMeshModifier> surfaces = new List<NavMeshModifier>();
         RaycastHit[] hits;
 
-        for (int i = 1; i < path.corners.Length; i++)
+        for (int i = 0; i < path.corners.Length-1; i++)
         {
-            Debug.DrawRay(path.corners[i], (path.corners[i - 1] - path.corners[i]), Color.red, 5);
-            hits = Physics.RaycastAll(path.corners[i] - new Vector3(0, 0.5f, 0),
-                (path.corners[i-1] - path.corners[i]),
-                Vector3.Distance(path.corners[i], path.corners[i-1]),
+            Debug.DrawRay(path.corners[i], (path.corners[i+1] - path.corners[i]) *  1.1f, Color.red, 5);
+            hits = Physics.RaycastAll(path.corners[i] - new Vector3(0, 0.25f, 0),
+                (path.corners[i+1] - path.corners[i]),
+                Vector3.Distance(path.corners[i+1], path.corners[i]) * 1.1f,
                 LayerMask.GetMask("NavMesh"));
 
             foreach (RaycastHit hit in hits)
@@ -288,7 +272,19 @@ public abstract class GoapAction : MonoBehaviour {
     {
         actionKnowledge += knowledge;
 
-        if (!actionEnabled && actionKnowledge >= 100)    { actionEnabled = true; GetComponent<GoapAgent>().addAction(this); }
-        if (!canCounterAction && actionKnowledge >= 200) { canCounterAction = true; }
+        // Use item Learning.
+        if (!actionEnabled && actionKnowledge >= 100 && _name == "UseItem")
+        {
+            GetComponent<UseItem>().actionEnabled = true; 
+            GetComponent<GoapAgent>().addAction(this); 
+
+        }
+        
+        // Dodge projectiles learning.
+        if(!actionEnabled && actionKnowledge >= 200 && _name == "DodgeProjectile")
+        {
+            actionEnabled = true;
+            GetComponent<GoapAgent>().addAction(GetComponent<DodgeProjectile>());
+        }
     }
 }

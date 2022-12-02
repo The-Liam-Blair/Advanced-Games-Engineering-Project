@@ -41,11 +41,16 @@ public sealed class GoapAgent : MonoBehaviour {
 	// Cooldown between receiving calls from other enemies about player sightings.
     public float playerSightingCooldown;
 
+    // Cooldown between dodging incoming player projectiles.
+    public float DodgeCooldown;
+
     // Value represents how aggressive the enemy should be. Higher aggressiveness = Enemy is given approximate player position with increasing accuracy as
-	// the value increases. Reduced significantly after executing a chase plan. Used to make the enemy forcefully encounter the player more often.
+    // the value increases. Reduced significantly after executing a chase plan. Used to make the enemy forcefully encounter the player more often.
     public float aggressiveness;
 
-	/// <summary>
+    public bool isBlinded;
+    
+    /// <summary>
 	/// On awake, initialise the state machine with 3 states: idle, move and perform.
 	/// Then load the actions and start the state machine in the idle state.
 	/// </summary>
@@ -64,6 +69,8 @@ public sealed class GoapAgent : MonoBehaviour {
         // Movement speed of the enemy.
         GetComponent<NavMeshAgent>().speed = 9f;
 
+        GetComponent<NavMeshAgent>().autoRepath = false;
+
 		// 'Pointer' to the world data class.
         WorldData = new CurrentWorldKnowledge();
 
@@ -73,6 +80,10 @@ public sealed class GoapAgent : MonoBehaviour {
         playerSightingCooldown = 0f;
 
         aggressiveness = 0;
+
+        DodgeCooldown = 0f;
+
+        isBlinded = false;
 
         // Set enemy name to number of enemies in the scene currently, starting at 0. E.g., first enemy is known as "0".
         // Must be done in awake function as enemy name is used as an indexer for assigning movement waypoints and awake functions are called before start functions.
@@ -297,22 +308,29 @@ public sealed class GoapAgent : MonoBehaviour {
 		StartCoroutine(SlowCoroutine(duration));
 	}
 
-
 	/// <summary>
-	/// Receive a heard call from another enemy. Mandatory for enemy cooperation.
+	/// Starts the blind co-routine, disabling sight.
 	/// </summary>
-	/// <param name="caller">Enemy that made the call.</param>
-	/// <param name="target">The caller's current target.</param>
-	/// <param name="callerGoal">The caller's current goal.</param>
-   public void ReceiveCall(GameObject caller, GameObject target, string callerGoal)
-   {
+	/// <param name="duration">Blindness duration.</param>
+    public void Blind(int duration)
+    {
+        StartCoroutine(BlindCoroutine(duration));
+    }
 
-       if (callerGoal.Equals("CHASEPLAYER")/* && playerSightingCooldown < 0f*/)
+
+    /// <summary>
+    /// Receive a heard call from another enemy. Mandatory for enemy cooperation.
+    /// </summary>
+    /// <param name="caller">Enemy that made the call.</param>
+    /// <param name="target">The caller's current target.</param>
+    /// <param name="callerGoal">The caller's current goal.</param>
+    public void ReceiveCall(GameObject caller, GameObject target, string callerGoal)
+   {
+       
+       if (callerGoal.Equals("CHASEPLAYER")&& playerSightingCooldown < 0f)
        {
-           playerSightingCooldown = 10f;
-           Debug.DrawLine(transform.position, transform.position + new Vector3(0, 10f, 0),
-               Color.red, 3);
-            WorldData.EditDataValue(new KeyValuePair<string, bool>("RECEIVECALL_playerSighting", true));
+           playerSightingCooldown = 10f; // 10 second cooldown between reacting to a heard call. Prevents enemies repeatedly calling each other and overloading the player.
+           WorldData.EditDataValue(new KeyValuePair<string, bool>("RECEIVECALL_playerSighting", true));
            StartCoroutine(PlayerSightingExpirationCoroutine(5));
        }
    }
@@ -374,6 +392,15 @@ public sealed class GoapAgent : MonoBehaviour {
         GetComponent<NavMeshAgent>().speed = 3.33f; // Apply speed debuff.
         yield return new WaitForSeconds(duration);
         GetComponent<NavMeshAgent>().speed = 9f; // Remove debuff by returning speed to normal.
+
+        yield return null;
+    }
+
+    IEnumerator BlindCoroutine(int duration)
+    {
+        isBlinded = true;
+        yield return new WaitForSeconds(duration);
+        isBlinded = false;
 
         yield return null;
     }

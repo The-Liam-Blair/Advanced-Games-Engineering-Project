@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using System.Threading;
+using System.Xml.Linq;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -11,7 +12,6 @@ using UnityEngine.AI;
 using UnityEngine.Events;
 using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
-using static UnityEditor.Progress;
 using Debug = UnityEngine.Debug;
 using Quaternion = UnityEngine.Quaternion;
 using Random = UnityEngine.Random;
@@ -31,6 +31,9 @@ public class GameManager : MonoBehaviour
 
     // Prefabs for generating the item objects.
     [SerializeField] private GameObject[] itemPrefabs;
+
+    // Timer to respawn each item.
+    private float itemRespawnTimer;
 
 
     // Used Item Objects (Projectiles, placed traps, etc).
@@ -73,6 +76,9 @@ public class GameManager : MonoBehaviour
     // Set to 0.3f every time the camera is switched or moved to another enemy to prevent multiple inputs per button press.
     private float inputSleep;
 
+    // Game manager spawns increasingly more enemies as the game progresses: This is the cooldown for spawning the next enemy.
+    private float enemySpawnCooldown;
+
 
     private void Awake()
     {
@@ -94,27 +100,31 @@ public class GameManager : MonoBehaviour
 
         // Init item pickups
         // 4 item pickups can exist in the map at one time.
-        deactivatedCount = 0;
-        itemPickups.Capacity = 4;
+        deactivatedCount = 16;
+        itemPickups.Capacity = 16;
+
+        // Resize item pickups list to 16 elements
+        itemPickups.AddRange(new GameObject[16]);
+
         for (int i = 0; i < itemPickups.Capacity; i++)
         {
-            // why is there no resize methods for lists c#?!
-            itemPickups.Add(Instantiate(itemPrefabs[0], GetValidPosition(), Quaternion.identity));
+            itemPickups[i] = Instantiate(itemPrefabs[0], GetValidPosition(), Quaternion.identity);
 
             // Init the items, adding the relevant components.
             itemPickups[i].transform.parent = GameObject.Find("ITEMPICKUPS").transform;
-            itemPickups[i].SetActive(true);
             itemPickups[i].AddComponent<ItemPickup>();
 
             itemPickups[i].name = i.ToString();
 
-            // Get stats for the item, which is currently random.
+            // Get stats for the item, which are randomized.
             (string, string, int) itemStats = GetRandomItemStats();
 
             // Update visual of the item pickup based on it's type and effect, to be able to determine item usage easily.
             UpdatePickupVisual(itemPickups[i], itemStats.Item1, itemStats.Item2);
 
             itemPickups[i].GetComponent<ItemPickup>().InitItem(itemStats.Item1, itemStats.Item2, itemStats.Item3);
+
+            itemPickups[i].SetActive(false);
         }
 
         // Init item objects; projectiles and walls. Only set active and used when an item is used.
@@ -135,18 +145,22 @@ public class GameManager : MonoBehaviour
 
         // Init enemy objects list with 1 enemy with respective way point.
         waypointObjects.Add(Instantiate(wayPointPrefab, Vector3.zero, Quaternion.identity));
-        enemyObjects.Add(Instantiate(enemyPrefab, new Vector3(0, 0.5f, 0), Quaternion.identity));
+        enemyObjects.Add(Instantiate(enemyPrefab, new Vector3(0, 1f, 0), Quaternion.identity));
 
         waypointObjects[0].name = "_WAYPOINT0";
         waypointObjects[0].transform.parent = GameObject.Find("WAYPOINTS").transform;
         
         enemyObjects[0].transform.parent = GameObject.Find("ENEMIES").transform;
+
+        itemRespawnTimer = 0.0f;
+        
+        enemySpawnCooldown = 30f; // 30 seconds before enemies start spawning.
     }
 
     private void LateUpdate()
     {
         // If an item was picked up...
-        if (deactivatedCount > 0)
+        if (deactivatedCount > 0 && itemRespawnTimer < 0f)
         {
             // Find the now-inactive item pickup.
             for (int i = 0; i < itemPickups.Count; i++)
@@ -155,6 +169,8 @@ public class GameManager : MonoBehaviour
                 {
                     // Respawn it.
                     GenerateNewItem(itemPickups[i]);
+                    itemRespawnTimer = 5f;
+                    break;
                 }
             }
         }
@@ -227,18 +243,26 @@ public class GameManager : MonoBehaviour
         // If enemy camera is not active then player camera is active, so update player camera's UI.
         else if (playerCam.activeInHierarchy)
         {
-            string output = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerInventory>().ItemEffectToString();
+            string output = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerInventory>().ItemOutput();
 
             P_ItemOut.text = output;
         }
 
-        // Decrease the sleep timer by dt.
+        if (enemySpawnCooldown < 0f)
+        {
+            AddEnemy(); // Accesses same function used by the "Add ENEMY" button in the debug UI.
+            enemySpawnCooldown = Random.Range(15f, 25f); // 15 - 25 second respawn timer per spawned enemy.
+        }
+
+        // Decrease timers by dt.
         inputSleep -= Time.deltaTime;
+        itemRespawnTimer -= Time.deltaTime;
+        enemySpawnCooldown -= Time.deltaTime;
     }
 
     /// <summary>
-    /// Add a new enemy instance to the game, as well as another waypoint object for it to use for patrolling. Called only
-    /// when the Add Enemy UI Button is pressed.
+    /// Add a new enemy instance to the game, as well as another waypoint object for it to use for patrolling. Called
+    /// when the Add Enemy UI Button is pressed or when the enemy spawn timer runs out.
     /// </summary>
     public void AddEnemy()
     {
@@ -318,8 +342,17 @@ public class GameManager : MonoBehaviour
                 itemObjects[itemObjectsPoolPointer].GetComponent<Rigidbody>().isKinematic = false;
                 itemObjects[itemObjectsPoolPointer].transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
 
+                if (attacker.tag == "Player")
+                {
+                    itemObjects[itemObjectsPoolPointer].tag = "PlayerProjectile"; // Player fired projectile: Enemy can see projectiles of this type and try to dodge them.
+                }
+                else
+                {
+                    itemObjects[itemObjectsPoolPointer].tag = "Projectile"; // Enemy fired projectile, different tag so enemies don't try to dodge their own projectiles.
+                }
+
                 // Push projectile forward.
-                itemObjects[itemObjectsPoolPointer].GetComponent<Rigidbody>().AddForce(attacker.transform.forward.normalized * 20, ForceMode.Impulse);
+                itemObjects[itemObjectsPoolPointer].GetComponent<Rigidbody>().AddForce(attacker.transform.forward.normalized * 15, ForceMode.Impulse);
                 break;
 
             // Placeable: item object is a non-moving object that persists on the ground and blocks movement.
@@ -341,7 +374,7 @@ public class GameManager : MonoBehaviour
     }
     /// <summary>
     /// Tries to find a valid position to place an object. Valid in this instance is a location on the nav mesh quad.
-    /// Currently may return positions that intersect with walls but does not (majorly) impact gameplay. todo.
+    /// Currently may return positions that intersect with walls but does not (majorly) impact game play.
     /// </summary>
     /// <returns>The valid position found.</returns>
     Vector3 GetValidPosition()
@@ -369,8 +402,8 @@ public class GameManager : MonoBehaviour
                 // If a valid path is found...
                 if (NavMesh.CalculatePath(new Vector3(0, 1f, 0), navMeshPos.position, NavMesh.AllAreas, path))
                 {
-                    // Return the valid position, with y value set to 1.5 as sample position will make the object intersect the floor.
-                    navMeshPos.position = new Vector3(navMeshPos.position.x, 1.5f, navMeshPos.position.z);
+                    // Return the valid position, with y value set to 1 as sample position will make the object intersect the floor.
+                    navMeshPos.position = new Vector3(navMeshPos.position.x, 1f, navMeshPos.position.z);
                     return navMeshPos.position;
                 }
             }
@@ -396,9 +429,9 @@ public class GameManager : MonoBehaviour
         // k = Item effect duration (Reduced by 50% for stun effects since stun is powerful, while doubled for wall items so that
         //     walls can be utilized better by enemy/player.
         int i, j, k;
-        i = Random.Range(0, 10);
+        i = Random.Range(0, 11);
         j = Random.Range(0, 3);
-        k = Random.Range(8, 12);
+        k = Random.Range(4, 9);
 
         string type = "", effect = "";
 

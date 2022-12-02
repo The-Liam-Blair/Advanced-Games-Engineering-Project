@@ -63,7 +63,7 @@ public class ChasePlayer : GoapAction
         NavMeshAgent nmAgent = agent.GetComponent<NavMeshAgent>();
 
         // If a nav mesh is being rebuilt, spin until it's built.
-        while (NavMeshBaker.ISNAVMESHBUILDING) { Debug.Log("WAITING... CHASE"); }
+        while (NavMeshBaker.ISNAVMESHBUILDING) { }
 
         // Calculate path sample, store inside path variable.
         NavMeshPath path = new NavMeshPath();

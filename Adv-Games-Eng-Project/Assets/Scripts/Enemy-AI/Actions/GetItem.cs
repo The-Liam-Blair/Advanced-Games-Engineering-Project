@@ -13,9 +13,7 @@ public class GetItem : GoapAction
 {
     // Action-specific global variables needed for proper action execution.
     private bool gotItem;
-
-    private NavMeshPath path;
-
+    
     // Init preconditions and effects.
     public GetItem()
     {
@@ -33,8 +31,8 @@ public class GetItem : GoapAction
         gotItem = false;
         cost = 1f;
         target = null;
-        path = null;
         hasPrePerformRun = false;
+        path = null;
     }
 
     // Check if the action has been completed.
@@ -52,12 +50,12 @@ public class GetItem : GoapAction
     // Checks if the action can be run
     public override bool checkProceduralPrecondition(GameObject agent)
     {
-        path = new NavMeshPath();
+        NavMeshPath _path = new NavMeshPath();
         // If the enemy has seen at least 1 item...
         if (GetComponent<GoapAgent>().getWorldData().ItemLocations.Count > 0)
         {
             float closestItemDist = Int32.MaxValue;
-            // Loop through the list of seen items, find the item that is closest (todo: Use nav mesh instead of vector distance).
+            // Loop through the list of seen items, find the item that is closest
             foreach (GameObject item in GetComponent<GoapAgent>().getWorldData().ItemLocations)
             {
                 if (Vector3.Distance(agent.transform.position, item.transform.position) < closestItemDist)
@@ -70,8 +68,9 @@ public class GetItem : GoapAction
             
             // If a nav mesh is being rebuilt, spin until it's built.
             while (NavMeshBaker.ISNAVMESHBUILDING) {}
-            NavMesh.CalculatePath(agent.transform.position, target.transform.position, NavMesh.AllAreas, path);
-
+            
+            NavMesh.CalculatePath(agent.transform.position, target.transform.position, NavMesh.AllAreas, _path);
+            path = _path;
             return true;
         }
         return false;

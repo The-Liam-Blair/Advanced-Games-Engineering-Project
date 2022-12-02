@@ -50,27 +50,31 @@ public class ItemObject : MonoBehaviour
             {
                 // Victim cannot move at all for \duration/ seconds.
                 case "STUN":
-                    if (other.gameObject.name == "Player") { other.gameObject.GetComponent<PlayerControl>().Stun(itemStats.duration); }
-                    else if(other.gameObject.name == "Enemy"){ other.gameObject.GetComponent<GoapAgent>().Stun(itemStats.duration); }
+                    if (other.gameObject.tag == "Player") { other.gameObject.GetComponent<PlayerControl>().Stun(itemStats.duration); }
+                    else if(other.gameObject.tag == "Enemy"){ other.gameObject.GetComponent<GoapAgent>().Stun(itemStats.duration); }
                     
                     break;
 
                 // Victim's movement speed is reduced by 66% for \duration/ seconds.
                 case "SLOW":
-                     if (other.gameObject.name == "Player") { other.gameObject.GetComponent<PlayerControl>().Slow(itemStats.duration); }
-                     else if (other.gameObject.name == "Enemy") { other.gameObject.GetComponent<GoapAgent>().Slow(itemStats.duration); }
-                    
-                    break;
- 
+                     if (other.gameObject.tag == "Player") { other.gameObject.GetComponent<PlayerControl>().Slow(itemStats.duration); }
+                     else if (other.gameObject.tag == "Enemy") { other.gameObject.GetComponent<GoapAgent>().Slow(itemStats.duration); }
+
+                     break;
+                
                 // (AI) enemy's vision is removed for \duration/ seconds.
                 // (Player) Player's vision is heavily darkened for \duration/ seconds.
-                case "BLIND": // todo
+                case "BLIND":
+                    if (other.gameObject.tag == "Player") { other.gameObject.GetComponent<PlayerControl>().Blind(itemStats.duration); }
+                    else if (other.gameObject.tag == "Enemy") { other.gameObject.GetComponent<GoapAgent>().Blind(itemStats.duration); }
+                    
                     break;
             }
 
             if (other.gameObject.tag == "Enemy")
             {
                 other.gameObject.GetComponent<UseItem>().IncreaseKnowledge(100);
+                other.gameObject.GetComponent<DodgeProjectile>().IncreaseKnowledge(100);
             }
 
             // Deactivate item as it's now been used up.
