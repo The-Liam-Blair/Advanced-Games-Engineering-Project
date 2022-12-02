@@ -66,6 +66,9 @@ public class GameManager : MonoBehaviour
     // Current player-held item output.
     private Text P_ItemOut;
 
+    // Current player-collected keys output;
+    private Text P_KeyCount;
+
     // Cameras- Enemy and player.
    [SerializeField] private GameObject enemyCam;
    [SerializeField] private GameObject playerCam;
@@ -93,7 +96,8 @@ public class GameManager : MonoBehaviour
         AOutput = GameObject.Find("AOutput").GetComponent<Text>(); // Enemy aggressiveness value.
         AcOutput = GameObject.Find("AcOutput").GetComponent<Text>(); // Enemy current action list.
 
-        P_ItemOut = GameObject.Find("itemHeld").GetComponent<Text>(); // Player held item.
+        P_ItemOut = GameObject.Find("ItemHeld").GetComponent<Text>(); // Player held item.
+        P_KeyCount = GameObject.Find("CurrentKeyPiece").GetComponent<Text>();
 
         enemyCam.SetActive(false);
 
@@ -243,9 +247,18 @@ public class GameManager : MonoBehaviour
         // If enemy camera is not active then player camera is active, so update player camera's UI.
         else if (playerCam.activeInHierarchy)
         {
-            string output = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerInventory>().ItemOutput();
+            P_ItemOut.text = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerInventory>().ItemOutput();
 
-            P_ItemOut.text = output;
+
+            int keyCount = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerInventory>().keyPieceCount;
+            if (keyCount < 6)
+            {
+                P_KeyCount.text = keyCount + "/ 6";
+            }
+            else
+            {
+                P_KeyCount.text = "ALL KEY PIECES FOUND.\n GO TO THE EXIT!!!";
+            }
         }
 
         if (enemySpawnCooldown < 0f)

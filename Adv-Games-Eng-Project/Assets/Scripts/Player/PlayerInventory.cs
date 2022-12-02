@@ -24,7 +24,7 @@ public class PlayerInventory : Inventory
         string output = "";
         if (IteminInventory == null)
         {
-            output += "NULL";
+            output = "NONE";
             return output; // Prevents null reference exception errors.
         }
         else if (IteminInventory.GetEffect() == "NONE")
