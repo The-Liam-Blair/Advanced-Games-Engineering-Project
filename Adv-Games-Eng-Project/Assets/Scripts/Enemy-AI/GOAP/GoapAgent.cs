@@ -10,6 +10,7 @@ using JetBrains.Annotations;
 using UnityEngine.AI;
 using Debug = UnityEngine.Debug;
 using static UnityEngine.GraphicsBuffer;
+using UnityEngine.Experimental.GlobalIllumination;
 
 /// <summary>
 /// Defines the agent that follows the GOAP system. Includes agent states and local variables such as actions and world data.
@@ -397,10 +398,15 @@ public sealed class GoapAgent : MonoBehaviour {
     }
 
     IEnumerator BlindCoroutine(int duration)
-    {
-        isBlinded = true;
+	{
+		isBlinded = true;
+        GameObject spotLight = transform.Find("Spot Light").gameObject;
+        spotLight.GetComponent<Light>().color = new Color32(69, 183, 41, 255); // Green light = Indicates that they're blinded, can't see anything.
+        
         yield return new WaitForSeconds(duration);
+        
         isBlinded = false;
+        spotLight.GetComponent<Light>().color = new Color32(155, 4, 1, 255); // Back to normal red light.
 
         yield return null;
     }

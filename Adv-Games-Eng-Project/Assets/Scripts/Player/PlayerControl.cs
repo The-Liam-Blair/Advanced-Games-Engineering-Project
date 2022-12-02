@@ -96,6 +96,11 @@ public class PlayerControl : MonoBehaviour
                 inventory.UseItem();
             }
         }
+
+        if (Input.GetAxisRaw("Exit") > 0)
+        {
+            Application.Quit();
+        }
     }
 
 

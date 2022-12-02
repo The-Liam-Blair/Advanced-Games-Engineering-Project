@@ -126,6 +126,21 @@ public class GoalCreation : MonoBehaviour, IGoap
             return true;
         }
 
+        // If enemy is blinded and enemy is chasing the player, forcefully end the chase as the enemy can't see.
+        if (nextAction.target == GameObject.FindGameObjectWithTag("Player") && GetComponent<GoapAgent>().isBlinded)
+        {
+            nextAction.currentCostTooHigh = true;
+            nextAction.setInRange(true);
+
+            WorldData.EditDataValue(new KeyValuePair<string, bool>("foundPlayer", false)); // Set found player to false, stopping another chase player goal.
+            WorldData.EditDataValue(new KeyValuePair<string, bool>("attackPlayer", false));
+
+            GetComponent<GoapAgent>().playerChaseTime = 0f; // Reset chase timer.
+            GetComponent<GoapAgent>().playerChaseCooldown = 5f; // Add a 5 second cooldown before the enemy can initiate another chase.
+
+            return true;
+        }
+
         /////////////////////////////////
         //// -- UPDATE AGENT PATH -- ////
         /////////////////////////////////
@@ -199,30 +214,12 @@ public class GoalCreation : MonoBehaviour, IGoap
         {
             for (int i = -5; i < 5; i++)
             {
-                if (i >= -2 && i <= 2)
-                {
-                    // Inner sight: Can fire projectiles at the player at this viewing angle (Approximately).
-                    //Debug.DrawRay(transform.position,
-                    //    (Quaternion.AngleAxis(i * 10, transform.up) * transform.forward).normalized * 8f,
-                   //     Color.black,
-                    //    0.01f);
-                }
-                else
-                {
-                    // Outer sight: Needs to rotate first before it can accurately fire a projectile.
-                   // Debug.DrawRay(transform.position,
-                   //     (Quaternion.AngleAxis(i * 10, transform.up) * transform.forward).normalized * 8f,
-                   //     Color.red,
-                    //    0.01f);
-                }
-
                 // Draw 10 raycasts from the enemy in a fan - like shape. Each ray will travel for 5 units in their respective directions and then
                 // record the first collision encountered in the "hit" output. It will not report collisions beyond the first (does not travel through entities, walls).
                 if (Physics.Raycast(transform.position,
-                        (Quaternion.AngleAxis(i * 10, transform.up) * transform.forward).normalized *
-                        8f,
+                        (Quaternion.AngleAxis(i * 10, transform.up) * transform.forward),
                         out hits[i + 5],
-                        8f))
+                        12f))
                 {
                     // If a ray cast hits the player and the enemy isn't in an active chase, begin the chase:
                     if (hits[i + 5].collider.gameObject.tag == "Player" &&

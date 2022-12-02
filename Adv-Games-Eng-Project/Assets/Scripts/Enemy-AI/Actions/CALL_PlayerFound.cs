@@ -66,9 +66,16 @@ public class CALL_PlayerFound : GoapAction
         
         if (startTime == 0) { startTime = Time.time; } // Record time taken: 2 seconds wait then do the call.
 
+        //find spot light child object
+        GameObject spotLight = agent.transform.Find("Spot Light").gameObject;
+        spotLight.GetComponent<Light>().color = Color.white; // White light = about to call for backup: run!
+
         // When the 2 seconds have passed, call other enemies.
         if (Time.time - startTime > 2)
         {
+            spotLight.GetComponent<Light>().color = Color.clear;
+            spotLight.GetComponent<Light>().color = new Color32(155, 4, 1, 255); // Back to red light again.
+
             agent.GetComponent<NavMeshAgent>().speed = 10f;
             
             done = true;

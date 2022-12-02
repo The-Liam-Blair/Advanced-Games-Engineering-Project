@@ -53,11 +53,11 @@ public class AimAtPlayer : GoapAction
     public override bool checkProceduralPrecondition(GameObject agent)
     {
         // Get angle difference between current rotation and rotation needed to aim and look at the player.
-        // If the angle difference is < 20 degrees, then it's short enough that using a projectile item will be quick and useful.
+        // If the angle difference is < 35 degrees, then it's short enough that using a projectile item will be quick and useful.
         // Otherwise, don't use projectile. In either case, aiming (and throwing items) requires player line of sight, so the enemy
         // will chase the player regardless of an item is used or not. Aiming + throwing is only done if it is cheap enough.
         float angleDiff = Vector3.Angle(agent.transform.forward, target.transform.position - agent.transform.position);
-        cost = (angleDiff < 30f) ? -angleDiff : 999f;
+        cost = (angleDiff < 35f) ? -angleDiff : 999f;
         return true;
     }
 

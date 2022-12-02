@@ -10,7 +10,9 @@ public class CollectKeyPiece : MonoBehaviour
         if (other.gameObject.tag == "Player")
         {
             other.gameObject.GetComponent<PlayerInventory>().keyPieceCount++;
-            gameObject.SetActive(false);
+            
+            // Inefficient but it also removes the associated point light with the key quickly.
+            Destroy(this.gameObject);
         }
     }
 }

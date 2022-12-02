@@ -261,10 +261,10 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        if (enemySpawnCooldown < 0f)
+        if (enemySpawnCooldown < 0f && enemyObjects.Count < 5) // Up to 5 enemies will spawn naturally.
         {
             AddEnemy(); // Accesses same function used by the "Add ENEMY" button in the debug UI.
-            enemySpawnCooldown = Random.Range(15f, 25f); // 15 - 25 second respawn timer per spawned enemy.
+            enemySpawnCooldown = 30f;
         }
 
         // Decrease timers by dt.
@@ -289,6 +289,16 @@ public class GameManager : MonoBehaviour
         waypointObjects[waypointObjects.Count - 1].transform.parent = GameObject.Find("WAYPOINTS").transform;
 
         enemyObjects[enemyObjects.Count - 1].transform.parent = GameObject.Find("ENEMIES").transform;
+    }
+
+    // Makes all enemies smart by giving them 200 knowledge to use items and dodge attacks.
+    public void GiveAllEnemiesKnowledge()
+    {
+        foreach (GameObject enemy in enemyObjects)
+        {
+            enemy.GetComponent<UseItem>().IncreaseKnowledge(200);
+            enemy.GetComponent<DodgeProjectile>().IncreaseKnowledge(200);
+        }
     }
 
     /// <summary>

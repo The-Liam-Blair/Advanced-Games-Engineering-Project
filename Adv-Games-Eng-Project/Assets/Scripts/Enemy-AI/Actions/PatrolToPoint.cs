@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SocialPlatforms;
 using UnityEngine.UI;
-using static UnityEditor.PlayerSettings;
 using Random = UnityEngine.Random;
 
 
