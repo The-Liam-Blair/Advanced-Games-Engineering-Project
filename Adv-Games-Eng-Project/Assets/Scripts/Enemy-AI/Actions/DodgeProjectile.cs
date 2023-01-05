@@ -20,7 +20,7 @@ public class DodgeProjectile: GoapAction
 
         addEffect("incomingProjectile", false);        // Projectile has been dodged.
 
-        actionEnabled = false;
+        actionEnabled = true; // Normally false action, enabled on start for gameplay purposes.
     }
 
 
@@ -64,8 +64,6 @@ public class DodgeProjectile: GoapAction
         }
         target = WorldData.PlayerProjectiles[0];
         
-        agent.GetComponent<Rigidbody>().isKinematic = false;
-
         // do raycast to left and right sides, choose side that is furthest away
         // from the projectile's path, then move to that side
         Vector3 left;
@@ -99,9 +97,7 @@ public class DodgeProjectile: GoapAction
         UpdateWorldState();
 
         GetComponent<NavMeshAgent>().speed = 9f;
-
-        GetComponent<Rigidbody>().isKinematic = true;
-
+        
         return true;
     }
 }

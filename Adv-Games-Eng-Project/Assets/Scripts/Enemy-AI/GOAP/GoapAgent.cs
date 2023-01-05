@@ -89,11 +89,6 @@ public sealed class GoapAgent : MonoBehaviour {
         // Set enemy name to number of enemies in the scene currently, starting at 0. E.g., first enemy is known as "0".
         // Must be done in awake function as enemy name is used as an indexer for assigning movement waypoints and awake functions are called before start functions.
         name = GameObject.Find("_GAMEMANAGER").GetComponent<GameManager>().GetEnemyCount().ToString();
-
-        GetComponent<Rigidbody>().isKinematic = true;
-
-
-
     }
 	
 
