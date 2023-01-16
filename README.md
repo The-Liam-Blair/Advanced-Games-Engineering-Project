@@ -1,7 +1,14 @@
-**Download the game at: *https://liam-blair.itch.io/shift*!**
+[**Download and play now!**](https://liam-blair.itch.io/shift)
 
 # About
 This university project, now named Shift, was implemented to investigate the effectiveness of the Goal-Oriented Action Planning (GOAP) planning strategy in use on enemy agents, in a maze escape scenario. The application was adapted from an existing Unity project which included a basic implementation of GOAP written by Brent Owens, which can be found here: *https://github.com/sploreg/goap*.
+
+## Game Features
+- **Reactive Enemies:** Each enemy utilises solely the GOAP algorithm to move and interact with it's environment. Currently, each enemy has five different goals which can be satisfied with eight different actions.
+- **Collectible Items:** Four different items to use against the enemies, three of which are projectiles which each inflict a different debuff (Stun, slow and blind), and a rare, unique fourth item that places a temoprary wall. Enemies are also capable of using these items.
+- **Enemy Cooperation:** When an enemy uses an item against the player, they will call nearby enemies for help. Enemies will then dynamically spread out around the maze and converge on the player, leaving minimal escape routes for the player.
+- **Enemy Pathfinding:** Handled with [Navigation Meshes](https://docs.unity3d.com/Manual/nav-NavigationSystem.html).
+- **Debug:** Debug menu which can be used to spawn more enemies and view GOAP-related information for each enemy, such as goal prioritisation.
 
 # Goal Oriented Action Planning
 Goal-Oriented Action Planning is a game-specific implementation of STRIPS (Stanford Technology Research Insititute Problem Solver), which was a general-purpose design of this planning strategy. Agents utilising GOAP each have a knowledge base known as the world state; a set of facts about every relevant piece of information about the current state of the world from each agent's point of view as booleans. For example, "weaponLoaded, true" could be considered a fact about the state of an agent's held weapon.
