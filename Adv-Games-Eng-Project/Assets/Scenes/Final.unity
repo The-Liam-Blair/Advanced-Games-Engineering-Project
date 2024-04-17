@@ -19399,8 +19399,8 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4737615572124896855, guid: c6580c36e7a029b489bcda781e62cdd7, type: 3}
       propertyPath: m_Text
-      value: "        CHASE PLAYER: \n       GOTO SIGHTING: \n                  GET
-        ITEM: \nDODGE PROJECTILE:\n                     PATROL:"
+      value: "        CHASE PLAYER: \n                  GET ITEM:\n       GOTO SIGHTING: 
+        \nDODGE PROJECTILE:\n                     PATROL:"
       objectReference: {fileID: 0}
     - target: {fileID: 4737615572425951421, guid: c6580c36e7a029b489bcda781e62cdd7, type: 3}
       propertyPath: m_Color.b

@@ -59,11 +59,11 @@ public class CurrentWorldKnowledge
         // Set list of all possible goals to choose from, and a placeholder insistence value of -1.
         Goals = new List<Tuple<string, bool, int>>();
 
-        Goals.Add(new Tuple<string, bool, int>("attackPlayer", true, -1));         // Move to the player and attack them.
-        Goals.Add(new Tuple<string, bool, int>("hasItem", true, -1));              // Acquire a seen item.
-        Goals.Add(new Tuple<string, bool, int>("moveToPlayerSighting", true, -1)); // Investigate a player sighting called from another enemy.
-        Goals.Add(new Tuple<string, bool, int>("incomingProjectile", false, -1));         // Default goal if no other is picked: Patrol w.r.t aggressiveness.
-        Goals.Add(new Tuple<string, bool, int>("isPatrolling", true, -1));         // Default goal if no other is picked: Patrol w.r.t aggressiveness.
+        Goals.Add(new Tuple<string, bool, int>("attackPlayer", true, 0));         // Move to the player and attack them.
+        Goals.Add(new Tuple<string, bool, int>("hasItem", true, 0));              // Acquire a seen item.
+        Goals.Add(new Tuple<string, bool, int>("moveToPlayerSighting", true, 0)); // Investigate a player sighting called from another enemy.
+        Goals.Add(new Tuple<string, bool, int>("incomingProjectile", false, 0));         // Default goal if no other is picked: Patrol w.r.t aggressiveness.
+        Goals.Add(new Tuple<string, bool, int>("isPatrolling", true, 0));         // Default goal if no other is picked: Patrol w.r.t aggressiveness.
 
 
         ItemLocations = new List<GameObject>();
@@ -239,7 +239,7 @@ public class CurrentWorldKnowledge
                 // Find and touch the player. Has negative insistence value by default, so will only be the chosen goal if the player found state is
                 // at true. Otherwise, other goals will always be chosen due to a higher starting insistence value of 0.
                 case GOALS.CHASEPLAYER:
-                    Insistence = -1;
+                    Insistence = 0;
                     if (playerFound) { Insistence = 100; }
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
@@ -247,34 +247,26 @@ public class CurrentWorldKnowledge
                 // Find an item if an item has been seen. Provides medium insistence, meaning some other goals may override this goal.
                 // If the enemy hasn't seen any items yet or already has one, this goal's insistence is set to -1, meaning it will not be picked.
                 case GOALS.FINDITEM:
-                    Insistence = -1;
+                    Insistence = 0;
                     if (ItemLocations.Count > 0 && GetFactState("hasItem", false)) { Insistence = 70; }
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
 
                 case GOALS.CALL_PLAYERSIGHTED:
-                    Insistence = -1;
-                    if(GetFactState("RECEIVECALL_playerSighting", true)) { Insistence = 90; }
+                    Insistence = 0;
+                    if(GetFactState("RECEIVECALL_playerSighting", true)) { Insistence = 80; }
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
 
 
                 case GOALS.DODGEPROJECTILE:
-                    Insistence = -1;
-                    if(GetFactState("incomingProjectile", true)) { Insistence = 500; }
+                    Insistence = 0;
+                    if(GetFactState("incomingProjectile", true)) { Insistence = 90; }
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
 
-                // Patrol goal can only be chosen if no other goal has an insistence value of 1 or higher. Essentially, this
-                // means that it's only chosen if no other better goal can be found at this time.
                 case GOALS.PATROL:
-                    int maxInsistence = Int32.MinValue;
-                    foreach (var goals in Goals)
-                    {
-                        if (goals.Item1 == "isPatrolling") { continue; }
-                        if (goals.Item3 > maxInsistence) { maxInsistence = goals.Item3; } // Item 3 - Insistence value of goal.
-                    }
-                    if (maxInsistence <= 1) { Insistence = 10; }
+                    Insistence = 10;
                     UpdateGoalInsistence(Goals[i], Insistence, i);
                     break;
             }
